@@ -270,6 +270,53 @@ async def run_agent_stream(
                     # Regular text output
                     yield content.text
 
+            # ---------------------------------------------------------
+            # Detect hosted tool events (web_search, file_search) from
+            # the raw OpenAI stream event.  The agent-framework-core SDK
+            # does NOT parse these into Content objects — they fall
+            # through to `case _: logger.debug(...)`.  However, the raw
+            # event is preserved in raw_representation, so we inspect it
+            # directly to emit tool events for the frontend.
+            # ---------------------------------------------------------
+            raw_event = getattr(update, "raw_representation", None)
+            if raw_event is not None:
+                raw_type = getattr(raw_event, "type", "")
+
+                # "response.output_item.added" with item.type == web/file search
+                if raw_type == "response.output_item.added":
+                    item = getattr(raw_event, "item", None)
+                    if item:
+                        item_type = getattr(item, "type", "")
+                        if item_type in ("web_search_call", "file_search_call"):
+                            tool_name = (
+                                "web_search"
+                                if "web_search" in item_type
+                                else "file_search"
+                            )
+                            item_id = getattr(item, "id", "") or tool_name
+                            if item_id not in emitted_tool_starts:
+                                emitted_tool_starts.add(item_id)
+                                call_id_to_name[item_id] = tool_name
+                                yield create_tool_event(tool_name, "started")
+
+                # "response.web_search_call.*" / "response.file_search_call.*"
+                elif "web_search_call" in raw_type or "file_search_call" in raw_type:
+                    tool_name = (
+                        "web_search" if "web_search_call" in raw_type else "file_search"
+                    )
+                    item_id = getattr(raw_event, "item_id", "") or tool_name
+
+                    if raw_type.endswith(".completed"):
+                        if item_id not in emitted_tool_ends:
+                            emitted_tool_ends.add(item_id)
+                            yield create_tool_event(tool_name, "completed")
+                    elif raw_type.endswith((".in_progress", ".searching")):
+                        # Emit started if not already done via output_item.added
+                        if item_id not in emitted_tool_starts:
+                            emitted_tool_starts.add(item_id)
+                            call_id_to_name[item_id] = tool_name
+                            yield create_tool_event(tool_name, "started")
+
             # Fallback: if update has .text but no contents processed
             if not update.contents and update.text:
                 yield update.text
