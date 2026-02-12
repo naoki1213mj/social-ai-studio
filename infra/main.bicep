@@ -1,4 +1,4 @@
-// ========== TechPulse Social — Infrastructure ========== //
+// ========== Social AI Studio — Infrastructure ========== //
 targetScope = 'resourceGroup'
 
 @minLength(3)
@@ -101,8 +101,8 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
     template: {
       containers: [
         {
-          name: 'techpulse-social'
-          image: '${acr.properties.loginServer}/techpulse-social:latest'
+          name: 'social-ai-studio'
+          image: '${acr.properties.loginServer}/social-ai-studio:latest'
           resources: {
             cpu: json('1.0')
             memory: '2.0Gi'

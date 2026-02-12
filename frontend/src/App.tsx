@@ -19,6 +19,7 @@ export default function App() {
   const [reasoning, setReasoning] = useState("");
   const [toolEvents, setToolEvents] = useState<ToolEvent[]>([]);
   const [safetyResult, setSafetyResult] = useState<SafetyResult | null>(null);
+  const [imageMap, setImageMap] = useState<Record<string, string>>({});
   const [threadId, setThreadId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [suggestedTopic, setSuggestedTopic] = useState<string>("");
@@ -64,6 +65,7 @@ export default function App() {
     setElapsedMs(0);
     setLastSubmitData(null);
     setSafetyResult(null);
+    setImageMap({});
   }, []);
 
   const handleSubmit = useCallback(
@@ -91,6 +93,7 @@ export default function App() {
       setToolEvents([]);
       setError(null);
       setSafetyResult(null);
+      setImageMap({});
 
       try {
         for await (const chunk of streamChat(
@@ -134,6 +137,14 @@ export default function App() {
           // Safety result from Content Safety analysis
           if (chunk.safety) {
             setSafetyResult(chunk.safety);
+          }
+
+          // Image data — collect per-platform images
+          if (chunk.imageData) {
+            setImageMap((prev) => ({
+              ...prev,
+              [chunk.imageData!.platform]: chunk.imageData!.image_base64,
+            }));
           }
 
           // Done
@@ -329,13 +340,14 @@ export default function App() {
             isGenerating={loading}
             onRefine={handleRefine}
             safetyResult={safetyResult}
+            imageMap={imageMap}
           />
         )}
       </main>
       </div>
 
       <footer className="border-t border-gray-200/50 dark:border-gray-800/50 py-3 text-center text-xs text-gray-400 dark:text-gray-500 bg-white/30 dark:bg-gray-900/30 backdrop-blur-sm">
-        <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent font-medium">TechPulse Social</span>
+        <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent font-medium">Social AI Studio</span>
         <span className="mx-1.5">—</span>
         Agents League @ TechConnect 2026
       </footer>

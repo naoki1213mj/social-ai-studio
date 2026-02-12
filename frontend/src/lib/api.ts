@@ -1,4 +1,4 @@
-/** API client for the TechPulse Social backend */
+/** API client for the Social AI Studio backend */
 
 export interface ChatRequest {
   message: string;
@@ -28,17 +28,24 @@ export interface SafetyResult {
   summary?: string;
 }
 
+export interface ImageData {
+  platform: string;
+  image_base64: string;
+}
+
 export interface ChatChunk {
   choices?: Array<{
     messages: Array<{ role: string; content: string }>;
   }>;
   thread_id?: string;
-  type?: "done" | "error" | "reasoning_update" | "safety";
+  type?: "done" | "error" | "reasoning_update" | "safety" | "image";
   reasoning?: string;
   error?: string;
   message?: string;
   safety?: SafetyResult;
   summary?: string;
+  platform?: string;
+  image_base64?: string;
 }
 
 // SSE marker patterns (matching backend)
@@ -55,6 +62,7 @@ export interface ParsedChunk {
   threadId: string | null;
   error: string | null;
   safety: SafetyResult | null;
+  imageData: ImageData | null;
 }
 
 /**
@@ -82,31 +90,35 @@ export function parseChunk(raw: string): ParsedChunk {
   // Try to parse remaining as JSON
   cleaned = cleaned.trim();
   if (!cleaned) {
-    return { text: "", toolEvents, reasoning, done: false, threadId: null, error: null, safety: null };
+    return { text: "", toolEvents, reasoning, done: false, threadId: null, error: null, safety: null, imageData: null };
   }
 
   try {
     const obj: ChatChunk = JSON.parse(cleaned);
     if (obj.type === "done") {
-      return { text: "", toolEvents, reasoning, done: true, threadId: obj.thread_id ?? null, error: null, safety: null };
+      return { text: "", toolEvents, reasoning, done: true, threadId: obj.thread_id ?? null, error: null, safety: null, imageData: null };
+    }
+    // Image data from generate_image tool
+    if (obj.type === "image" && obj.platform && obj.image_base64) {
+      return { text: "", toolEvents, reasoning, done: false, threadId: null, error: null, safety: null, imageData: { platform: obj.platform, image_base64: obj.image_base64 } };
     }
     // Safety result from Content Safety analysis
     if (obj.type === "safety" && obj.safety) {
-      return { text: "", toolEvents, reasoning, done: false, threadId: null, error: null, safety: obj.safety as SafetyResult };
+      return { text: "", toolEvents, reasoning, done: false, threadId: null, error: null, safety: obj.safety as SafetyResult, imageData: null };
     }
     // Reasoning delivered as JSON envelope (avoids \n\n SSE framing issues)
     if (obj.type === "reasoning_update" && obj.reasoning) {
-      return { text: "", toolEvents, reasoning: obj.reasoning, done: false, threadId: null, error: null, safety: null };
+      return { text: "", toolEvents, reasoning: obj.reasoning, done: false, threadId: null, error: null, safety: null, imageData: null };
     }
     if (obj.error) {
-      return { text: "", toolEvents, reasoning, done: false, threadId: null, error: obj.error, safety: null };
+      return { text: "", toolEvents, reasoning, done: false, threadId: null, error: obj.error, safety: null, imageData: null };
     }
     const content = obj.choices?.[0]?.messages?.[0]?.content ?? "";
     const threadId = obj.thread_id ?? null;
-    return { text: content, toolEvents, reasoning, done: false, threadId, error: null, safety: null };
+    return { text: content, toolEvents, reasoning, done: false, threadId, error: null, safety: null, imageData: null };
   } catch {
     // Not JSON — treat as plain text
-    return { text: cleaned, toolEvents, reasoning, done: false, threadId: null, error: null, safety: null };
+    return { text: cleaned, toolEvents, reasoning, done: false, threadId: null, error: null, safety: null, imageData: null };
   }
 }
 

@@ -88,7 +88,7 @@ reasoning_opts: ReasoningOptions = {
 
 # Create agent with default reasoning config
 agent = client.as_agent(
-    name="techpulse_social_agent",
+    name="social_ai_studio_agent",
     instructions=SYSTEM_PROMPT,
     tools=[web_search, file_search, generate_content, review_content, generate_image],
     default_options={"reasoning": reasoning_opts},

@@ -37,7 +37,7 @@ class TestConfigDefaults:
     def test_cosmos_database_default(self):
         from src.config import COSMOS_DATABASE
 
-        assert COSMOS_DATABASE == os.getenv("COSMOS_DATABASE", "techpulse-social")
+        assert COSMOS_DATABASE == os.getenv("COSMOS_DATABASE", "social-ai-studio")
 
     def test_cosmos_container_default(self):
         from src.config import COSMOS_CONTAINER

@@ -31,7 +31,7 @@ class TestGetSystemPrompt:
     def test_ab_mode_preserves_base(self):
         prompt = get_system_prompt(ab_mode=True)
         # Base prompt content should still be there
-        assert "TechPulse Inc." in prompt
+        assert "social media content strategist" in prompt
         assert "Chain-of-Thought" in prompt
         assert "ReAct" in prompt
         assert "Self-Reflection" in prompt

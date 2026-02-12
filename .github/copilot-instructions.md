@@ -3,7 +3,7 @@
 ## Project Overview
 
 This is a hackathon project for **Agents League @ TechConnect 2026** — **Reasoning Agents** track.
-We are building an AI-powered **social media content creation pipeline** for **TechPulse Inc.** (a technology company) that assists the communication team in creating platform-optimized content for LinkedIn, X/Twitter, and Instagram.
+We are building an AI-powered **social media content creation pipeline** ("Social AI Studio") that assists marketing and communication teams in creating platform-optimized content for LinkedIn, X/Twitter, and Instagram. The tool is designed to be brand-agnostic — adaptable to any company or industry via uploadable brand guidelines.
 
 The system features:
 - **gpt-5.2** reasoning agent with controllable reasoning depth and thinking display

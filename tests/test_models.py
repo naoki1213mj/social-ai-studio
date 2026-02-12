@@ -47,10 +47,15 @@ class TestChatRequest:
         with pytest.raises(ValidationError):
             ChatRequest()
 
-    def test_empty_message_allowed(self):
-        # Pydantic str field allows empty by default
-        req = ChatRequest(message="")
-        assert req.message == ""
+    def test_empty_message_rejected(self):
+        # Empty messages should be rejected (min_length=1)
+        with pytest.raises(ValidationError):
+            ChatRequest(message="")
+
+    def test_message_max_length(self):
+        # Messages exceeding max_length should be rejected
+        with pytest.raises(ValidationError):
+            ChatRequest(message="x" * 10001)
 
     def test_serialization(self):
         req = ChatRequest(message="test")

@@ -1,4 +1,4 @@
-"""Cosmos DB conversation history for TechPulse Social.
+"""Cosmos DB conversation history for Social AI Studio.
 
 Stores and retrieves conversation history using Azure Cosmos DB (NoSQL API).
 Falls back to in-memory storage when Cosmos DB is not configured.

@@ -1,4 +1,4 @@
-"""FastAPI application with SSE streaming for TechPulse Social.
+"""FastAPI application with SSE streaming for Social AI Studio.
 
 Provides:
 - POST /api/chat — Streaming chat endpoint (SSE)
@@ -25,7 +25,14 @@ from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse, StreamingResponse  # noqa: E402
 
-from src.agent import REASONING_END, REASONING_START, run_agent_stream  # noqa: E402
+from src import __version__
+from src.agent import (  # noqa: E402
+    IMAGE_DATA_END,
+    IMAGE_DATA_START,
+    REASONING_END,
+    REASONING_START,
+    run_agent_stream,
+)
 from src.config import DEBUG  # noqa: E402
 from src.content_safety import (
     analyze_safety,
@@ -71,9 +78,9 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 
 # FastAPI app
 app = FastAPI(
-    title="TechPulse Social API",
+    title="Social AI Studio API",
     description="AI-Powered Social Media Content Studio",
-    version="0.3.0",
+    version=__version__,
     lifespan=lifespan,
 )
 
@@ -98,10 +105,13 @@ app.add_middleware(
 _STATIC_DIR = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 _SERVE_STATIC = os.getenv("SERVE_STATIC", "false").lower() == "true"
 
-# Regex for reasoning and tool event markers
+# Regex for reasoning, tool event, and image data markers
 TOOL_EVENT_PATTERN = re.compile(r"__TOOL_EVENT__(.*?)__END_TOOL_EVENT__")
 REASONING_PATTERN = re.compile(
     rf"{re.escape(REASONING_START)}([\s\S]*?){re.escape(REASONING_END)}"
+)
+IMAGE_DATA_PATTERN = re.compile(
+    rf"{re.escape(IMAGE_DATA_START)}([\s\S]*?){re.escape(IMAGE_DATA_END)}"
 )
 
 
@@ -110,8 +120,8 @@ async def health_check() -> dict:
     """Health check endpoint."""
     return {
         "status": "ok",
-        "service": "techpulse-social",
-        "version": "0.4.0",
+        "service": "social-ai-studio",
+        "version": __version__,
         "observability": "opentelemetry",
         "content_safety": "enabled" if safety_configured() else "not_configured",
     }
@@ -213,6 +223,21 @@ async def chat(request: Request) -> StreamingResponse:
                     yield f"{chunk_str}\n\n"
                     continue
 
+                # Check for image data markers — send as separate SSE event
+                image_match = IMAGE_DATA_PATTERN.search(chunk_str)
+                if image_match:
+                    try:
+                        image_data = json.loads(image_match.group(1))
+                        image_event = {
+                            "type": "image",
+                            "platform": image_data.get("platform", ""),
+                            "image_base64": image_data.get("image_base64", ""),
+                        }
+                        yield json.dumps(image_event, ensure_ascii=False) + "\n\n"
+                    except json.JSONDecodeError:
+                        logger.warning("Failed to parse image data marker")
+                    continue
+
                 # Check for reasoning markers — encode as JSON to avoid
                 # \n\n in reasoning text breaking SSE framing
                 reasoning_match = REASONING_PATTERN.search(chunk_str)
@@ -304,7 +329,10 @@ if _SERVE_STATIC and _STATIC_DIR.is_dir():
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str) -> FileResponse:
         """Serve SPA — return index.html for all non-API routes."""
-        file_path = _STATIC_DIR / full_path
+        file_path = (_STATIC_DIR / full_path).resolve()
+        # Prevent path traversal — ensure resolved path is under _STATIC_DIR
+        if not str(file_path).startswith(str(_STATIC_DIR.resolve())):
+            return FileResponse(_STATIC_DIR / "index.html")
         if file_path.is_file():
             return FileResponse(file_path)
         return FileResponse(_STATIC_DIR / "index.html")
@@ -400,7 +428,7 @@ def main() -> None:
 
     from src.config import HOST, PORT
 
-    logger.info("Starting TechPulse Social API on %s:%s", HOST, PORT)
+    logger.info("Starting Social AI Studio API on %s:%s", HOST, PORT)
     uvicorn.run(
         "src.api:app",
         host=HOST,

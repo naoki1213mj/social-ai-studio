@@ -26,7 +26,7 @@ class TestHealthEndpoint:
     def test_health_response_body(self, client):
         data = client.get("/api/health").json()
         assert data["status"] == "ok"
-        assert data["service"] == "techpulse-social"
+        assert data["service"] == "social-ai-studio"
         assert "version" in data
 
 

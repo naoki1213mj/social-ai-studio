@@ -1,9 +1,9 @@
-# TechPulse Social — AI-Powered Social Media Content Studio
+# Social AI Studio — AI-Powered Social Media Content Studio
 
 ![Python 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python)
 ![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript)
-![Tests](https://img.shields.io/badge/tests-119%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-120%20passed-brightgreen)
 ![Azure](https://img.shields.io/badge/Azure-Foundry-0078d4?logo=microsoftazure)
 ![License](https://img.shields.io/badge/license-Hackathon-orange)
 
@@ -11,7 +11,7 @@
 
 🌐 **English** | [日本語](README.ja.md)
 
-An AI-powered content creation pipeline for **TechPulse Inc.** that assists the communication team in creating platform-optimized social media content for LinkedIn, X (Twitter), and Instagram.
+An AI-powered content creation pipeline that assists marketing and communication teams in creating platform-optimized social media content for LinkedIn, X (Twitter), and Instagram — adaptable to any brand or industry.
 
 **Single reasoning agent (gpt-5.2) × 7 tools × 3-phase thinking pipeline × production-grade observability**
 
@@ -37,7 +37,7 @@ _Coming soon — 3 min walkthrough of the full reasoning pipeline_
 | 🌙 **Dark / Light Mode** | System-preference-aware theme switching |
 | ✨ **Glassmorphism UI** | Frosted glass, gradient borders, animated tool pills |
 | 🚀 **One-Command Deploy** | `azd up` → Azure Container Apps |
-| ✅ **119 Unit Tests** | Comprehensive backend test suite |
+| ✅ **120 Unit Tests** | Comprehensive backend test suite |
 
 ## 🏗️ Architecture
 
@@ -227,7 +227,7 @@ Toggle A/B mode in AI Settings to generate **two content variants with different
 | **UI Components** | lucide-react icons, react-markdown, recharts (radar charts) |
 | **Deployment** | Azure Container Apps via azd (multi-stage Docker build) |
 | **Package Mgr** | uv (Python), npm (Node.js) |
-| **Testing** | pytest + pytest-asyncio (119 tests) |
+| **Testing** | pytest + pytest-asyncio (120 tests) |
 
 ## 🚀 Quick Start
 
@@ -327,12 +327,12 @@ This builds a multi-stage Docker image (Node.js frontend → Python backend) and
 │   │   └── lib/              # api.ts (SSE client), i18n.ts (5 languages)
 │   ├── vite.config.ts
 │   └── package.json
-├── tests/                    # 119 unit tests (pytest + pytest-asyncio)
+├── tests/                    # 120 unit tests (pytest + pytest-asyncio)
 ├── infra/
 │   ├── main.bicep            # Azure infrastructure (ACR + Container Apps)
 │   └── main.parameters.json
 ├── data/
-│   └── brand_guidelines.md   # TechPulse brand guide (uploaded to Vector Store)
+│   └── brand_guidelines.md   # Sample brand guide (uploaded to Vector Store)
 ├── docs/
 │   ├── DESIGN.md             # Architecture design document
 │   └── SPEC.md               # Technical specification
@@ -380,7 +380,7 @@ Returns: `{"relevance": 4.5, "coherence": 5.0, "fluency": 4.0, "groundedness": 4
 ### `GET /api/health`
 
 ```json
-{"status": "ok", "service": "techpulse-social", "version": "0.4.0", "observability": "opentelemetry"}
+{"status": "ok", "service": "social-ai-studio", "version": "0.4.0", "observability": "opentelemetry"}
 ```
 
 ### Other Endpoints
@@ -421,18 +421,18 @@ Returns: `{"relevance": 4.5, "coherence": 5.0, "fluency": 4.0, "groundedness": 4
 
 ## 🏆 Judging Criteria Mapping
 
-| Criteria | Weight | How TechPulse Social Addresses It |
+| Criteria | Weight | How Social AI Studio Addresses It |
 |----------|--------|-----------------------------------|
 | **Accuracy & Relevance** | 25% | 7 tools (web search, file search, MCP, Foundry IQ, content gen, review, image gen), brand grounding via Vector Store, Foundry Evaluation (Relevance + Groundedness scoring), dual quality assessment |
 | **Reasoning & Multi-step Thinking** | 25% | 3-phase pipeline (CoT → ReAct → Self-Reflection), live phase badges, controllable depth (low/medium/high), OpenTelemetry tracing of reasoning pipeline with per-tool spans |
 | **Creativity & Originality** | 20% | HITL workflow (approve/edit/refine), A/B content comparison with strategy variants, reasoning phase visualization, GPT Image generation, MCP Server integration, dual evaluation system (self-review + Foundry metrics) |
 | **User Experience & Presentation** | 15% | Polished glassmorphism UI with animations, dark/light mode, 5-language i18n, skeleton loading, suggested questions, keyboard shortcuts, conversation history, content export (Markdown + JSON) |
-| **Technical Implementation** | 15% | agent-framework-core SDK, SSE streaming with OTel distributed tracing, Cosmos DB persistence, Azure Container Apps deployment via azd, 119 unit tests, OpenTelemetry → Application Insights pipeline, Foundry Evaluation SDK integration |
+| **Technical Implementation** | 15% | agent-framework-core SDK, SSE streaming with OTel distributed tracing, Cosmos DB persistence, Azure Container Apps deployment via azd, 120 unit tests, OpenTelemetry \u2192 Application Insights pipeline, Foundry Evaluation SDK integration |
 
 ## 🧪 Testing
 
 ```bash
-# Run all 119 tests
+# Run all 120 tests
 uv run python -m pytest tests/ -q
 
 # With verbose output

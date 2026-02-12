@@ -1,4 +1,4 @@
-"""Configuration loader for TechPulse Social.
+"""Configuration loader for Social AI Studio.
 
 Loads environment variables from .env and exposes them as module-level constants.
 """
@@ -31,7 +31,7 @@ MCP_SERVER_URL: str = os.getenv("MCP_SERVER_URL", "https://learn.microsoft.com/a
 
 # Azure Cosmos DB
 COSMOS_ENDPOINT: str = os.getenv("COSMOS_ENDPOINT", "")
-COSMOS_DATABASE: str = os.getenv("COSMOS_DATABASE", "techpulse-social")
+COSMOS_DATABASE: str = os.getenv("COSMOS_DATABASE", "social-ai-studio")
 COSMOS_CONTAINER: str = os.getenv("COSMOS_CONTAINER", "conversations")
 
 # Azure AI token scope (shared across client.py, tools.py, agentic_retrieval.py)
@@ -51,7 +51,7 @@ PORT: int = int(os.getenv("PORT", "8000"))
 APPLICATIONINSIGHTS_CONNECTION_STRING: str = os.getenv(
     "APPLICATIONINSIGHTS_CONNECTION_STRING", ""
 )
-OTEL_SERVICE_NAME: str = os.getenv("OTEL_SERVICE_NAME", "techpulse-social")
+OTEL_SERVICE_NAME: str = os.getenv("OTEL_SERVICE_NAME", "social-ai-studio")
 
 # Evaluation
 EVAL_MODEL_DEPLOYMENT: str = os.getenv("EVAL_MODEL_DEPLOYMENT", "gpt-4o-mini")

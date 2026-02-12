@@ -1,9 +1,9 @@
-# TechPulse Social — AI ソーシャルメディアコンテンツスタジオ
+# Social AI Studio — AI ソーシャルメディアコンテンツスタジオ
 
 ![Python 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python)
 ![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript)
-![Tests](https://img.shields.io/badge/tests-119%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-120%20passed-brightgreen)
 ![Azure](https://img.shields.io/badge/Azure-Foundry-0078d4?logo=microsoftazure)
 ![License](https://img.shields.io/badge/license-Hackathon-orange)
 
@@ -11,7 +11,7 @@
 
 🌐 [English](README.md) | **日本語**
 
-**TechPulse Inc.** のコミュニケーションチーム向け AI コンテンツ制作パイプライン。LinkedIn、X (Twitter)、Instagram にプラットフォーム最適化されたソーシャルメディアコンテンツを作成します。
+マーケティング・広報チーム向け AI コンテンツ制作パイプライン。LinkedIn、X (Twitter)、Instagram にプラットフォーム最適化されたソーシャルメディアコンテンツを作成します。あらゆるブランド・業界に対応可能です。
 
 **単一推論エージェント (gpt-5.2) × 7 ツール × 3 フェーズ思考パイプライン × 本番運用レベルのオブザーバビリティ**
 
@@ -37,7 +37,7 @@ _近日公開 — 推論パイプラインの全体ウォークスルー（3分�
 | 🌙 **ダーク / ライトモード** | システム設定連動テーマ切替 |
 | ✨ **グラスモーフィズム UI** | フロストガラス、グラデーション、アニメーションツールピル |
 | 🚀 **ワンコマンドデプロイ** | `azd up` → Azure Container Apps |
-| ✅ **119 ユニットテスト** | 包括的なバックエンドテストスイート |
+| ✅ **120 ユニットテスト** | 包括的なバックエンドテストスイート |
 
 ## 🏗️ アーキテクチャ
 
@@ -227,7 +227,7 @@ AI 設定で A/B モードをオンにすると**異なる戦略の 2 つのコ�
 | **UI コンポーネント** | lucide-react アイコン、react-markdown、recharts（レーダーチャート） |
 | **デプロイ** | Azure Container Apps via azd（マルチステージ Docker ビルド） |
 | **パッケージマネージャ** | uv（Python）、npm（Node.js） |
-| **テスト** | pytest + pytest-asyncio（119 テスト） |
+| **テスト** | pytest + pytest-asyncio（120 テスト） |
 
 ## 🚀 クイックスタート
 
@@ -328,12 +328,12 @@ azd up
 │   │   └── lib/              # api.ts（SSE クライアント）, i18n.ts（5 言語）
 │   ├── vite.config.ts
 │   └── package.json
-├── tests/                    # 119 ユニットテスト（pytest + pytest-asyncio）
+├── tests/                    # 120 ユニットテスト（pytest + pytest-asyncio）
 ├── infra/
 │   ├── main.bicep            # Azure インフラ（ACR + Container Apps）
 │   └── main.parameters.json
 ├── data/
-│   └── brand_guidelines.md   # TechPulse ブランドガイド（Vector Store にアップロード）
+│   └── brand_guidelines.md   # サンプルブランドガイド（Vector Store にアップロード）
 ├── docs/
 │   ├── DESIGN.md             # アーキテクチャ設計ドキュメント
 │   └── SPEC.md               # 技術仕様書
@@ -393,7 +393,7 @@ SSE ストリームを返します：
 ### `GET /api/health`
 
 ```json
-{"status": "ok", "service": "techpulse-social", "version": "0.4.0", "observability": "opentelemetry", "content_safety": "enabled"}
+{"status": "ok", "service": "social-ai-studio", "version": "0.4.0", "observability": "opentelemetry", "content_safety": "enabled"}
 ```
 
 ### その他のエンドポイント
@@ -434,18 +434,18 @@ SSE ストリームを返します：
 
 ## 🏆 審査基準マッピング
 
-| 基準 | 配分 | TechPulse Social の対応 |
+| 基準 | 配分 | Social AI Studio の対応 |
 | ---- | ---- | ----------------------- |
 | **正確性 & 関連性** | 25% | 7 ツール（Web検索、ファイル検索、MCP、Foundry IQ、コンテンツ生成、レビュー、画像生成）、Vector Store によるブランドグラウンディング、Foundry Evaluation（関連性 + 根拠性スコアリング）、デュアル品質評価 |
 | **推論 & マルチステップ思考** | 25% | 3 フェーズパイプライン（CoT → ReAct → Self-Reflection）、ライブフェーズバッジ、制御可能な深さ（low/medium/high）、OpenTelemetry による推論パイプラインのトレーシング（ツール別スパン） |
 | **創造性 & 独自性** | 20% | HITL ワークフロー（承認/編集/改善）、A/B コンテンツ比較（戦略バリアント）、推論フェーズ可視化、GPT 画像生成、MCP Server 統合、デュアル評価システム（自己レビュー + Foundry メトリクス） |
 | **ユーザー体験 & プレゼン** | 15% | フロストガラス UI + アニメーション、ダーク/ライトモード、5 言語 i18n、スケルトンローディング、おすすめ質問、キーボードショートカット、会話履歴、コンテンツエクスポート（Markdown + JSON） |
-| **技術実装** | 15% | agent-framework-core SDK、OTel 分散トレーシング付き SSE ストリーミング、Cosmos DB 永続化、azd 経由 Azure Container Apps デプロイ、119 ユニットテスト、OpenTelemetry → Application Insights パイプライン、Foundry Evaluation SDK 統合 |
+| **技術実装** | 15% | agent-framework-core SDK、OTel 分散トレーシング付き SSE ストリーミング、Cosmos DB 永続化、azd 経由 Azure Container Apps デプロイ、120 ユニットテスト、OpenTelemetry → Application Insights パイプライン、Foundry Evaluation SDK 統合 |
 
 ## 🧪 テスト
 
 ```bash
-# 全 119 テスト実行
+# 全 120 テスト実行
 uv run python -m pytest tests/ -q
 
 # 詳細出力

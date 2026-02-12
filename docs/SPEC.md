@@ -2,9 +2,9 @@
 
 ## 1. プロダクト概要
 
-**名前**: TechPulse Social — AI-Powered Social Media Content Studio
+**名前**: Social AI Studio — AI-Powered Social Media Content Studio
 
-**概要**: テクノロジー企業「TechPulse Inc.」の広報チームを支援する AI エージェントシステム。
+**概要**: あらゆるブランド・業界の広報・マーケティングチームを支援する AI エージェントシステム。
 単一の推論エージェント (gpt-5.2) が 7 つのツールを自律的に活用し、3フェーズの推論パイプライン
 （CoT → ReAct → Self-Reflection）を通じて戦略立案 → コンテンツ生成 → 品質レビューを一貫して実行する。
 
@@ -12,7 +12,7 @@
 OpenTelemetry 分散トレーシング、Foundry Evaluation による品質メトリクスを統合した
 エンタープライズグレードのソーシャルメディアコンテンツスタジオ。
 
-**ターゲットユーザー**: テクノロジー企業の広報・マーケティング担当者
+**ターゲットユーザー**: 企業の広報・マーケティング担当者
 
 **バージョン**: 0.4.0
 
@@ -65,7 +65,7 @@ OpenTelemetry 分散トレーシング、Foundry Evaluation による品質メ�
 
 ## 3. エージェント構成（単一エージェント + 7ツール）
 
-### エージェント: TechPulse Content Agent
+### エージェント: Social AI Studio Content Agent
 
 - **役割**: トピックを分析し、各プラットフォーム向けのコンテンツを生成・レビュー
 - **モデル**: gpt-5.2（推論モデル）
@@ -96,7 +96,7 @@ OpenTelemetry 分散トレーシング、Foundry Evaluation による品質メ�
 | **データ永続化** | Cosmos DB 会話履歴（InMemory フォールバック）|
 | **マルチターン** | Thread ID + Conversation ID 保持でリファイン対話対応 |
 | **停止/リトライ** | Stop ボタンで SSE 中断、Retry ボタンで再生成 |
-| **テスト** | 119 ユニットテスト (pytest + pytest-asyncio) |
+| **テスト** | 120 ユニットテスト (pytest + pytest-asyncio) |
 | **デプロイ** | azd up → Azure Container Apps (Docker マルチステージ) |
 
 ## 5. フロントエンド機能要件
@@ -153,7 +153,7 @@ OpenTelemetry 分散トレーシング、Foundry Evaluation による品質メ�
 | **認証** | DefaultAzureCredential (Azure CLI / Managed Identity) |
 | **デプロイ** | Azure Container Apps via azd (Docker マルチステージ) |
 | **パッケージ管理** | uv (Python) / npm (Node.js) |
-| **テスト** | pytest + pytest-asyncio (119 tests) |
+| **テスト** | pytest + pytest-asyncio (120 tests) |
 
 ## 7. API エンドポイント
 

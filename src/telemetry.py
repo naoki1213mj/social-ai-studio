@@ -1,4 +1,4 @@
-"""OpenTelemetry + Azure Application Insights integration for TechPulse Social.
+"""OpenTelemetry + Azure Application Insights integration for Social AI Studio.
 
 Provides distributed tracing for the agent pipeline, tool invocations,
 and FastAPI request handling.  Traces appear in:
@@ -25,8 +25,10 @@ logger = logging.getLogger(__name__)
 _tracer: Tracer | None = None
 
 # Service metadata
-SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "techpulse-social")
-SERVICE_VERSION = "0.4.0"
+SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "social-ai-studio")
+from src import __version__
+
+SERVICE_VERSION = __version__
 
 # Whether telemetry has been initialized
 _initialized = False
@@ -96,7 +98,7 @@ def setup_telemetry() -> None:
         _initialized = True
 
 
-def get_tracer(name: str = "techpulse.agent") -> Tracer:
+def get_tracer(name: str = "social_ai_studio.agent") -> Tracer:
     """Get an OpenTelemetry tracer instance.
 
     Args:

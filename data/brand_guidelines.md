@@ -1,18 +1,22 @@
-# TechPulse Inc. — Brand Guidelines for Social Media
+# Sample Brand Guidelines for Social Media
+
+> **Note**: This is a sample brand guidelines document. Replace this file with your
+> own company's brand guidelines to get tailored, on-brand social media content.
+> The AI agent uses this document via file_search to align content with your brand.
 
 ## Company Overview
 
-**TechPulse Inc.** is a forward-thinking technology company specializing in AI-powered developer tools and cloud infrastructure solutions. Founded in 2020, we empower developers and enterprises to build the next generation of intelligent applications.
+**[Your Company Name]** — Describe your company's mission, products, and target market here.
 
-**Mission**: Accelerate innovation by making AI accessible to every developer.
+**Mission**: Your company's mission statement.
 
-**Vision**: A world where every developer can harness AI to solve humanity's greatest challenges.
+**Vision**: Your company's long-term vision.
 
 **Core Values**:
-- **Innovation First**: We push boundaries and embrace the unknown
-- **Developer Love**: Everything we build starts with developer needs
-- **Open & Transparent**: We believe in open source and open communication
-- **Impact at Scale**: We measure success by the impact our tools create
+- **Value 1**: Brief description
+- **Value 2**: Brief description
+- **Value 3**: Brief description
+- **Value 4**: Brief description
 
 ## Brand Voice & Tone
 
@@ -47,31 +51,29 @@
 
 ## Key Messaging Pillars
 
-1. **AI for Developers**: "We build the tools that let developers build the future"
-2. **Cloud-Native Innovation**: "Born in the cloud, built for scale"
-3. **Community-Driven**: "Built with developers, for developers"
-4. **Enterprise Ready**: "From prototype to production, we've got you covered"
+1. **Pillar 1**: "Your first key message"
+2. **Pillar 2**: "Your second key message"
+3. **Pillar 3**: "Your third key message"
+4. **Pillar 4**: "Your fourth key message"
 
 ## Hashtag Strategy
 
-### Always Use (Brand Hashtags)
-- #TechPulse
-- #TechPulseAI
-- #BuildWithTechPulse
+### Brand Hashtags (Always Use)
+- #YourBrand
+- #YourBrandProduct
 
-### Category Hashtags
-- AI/ML: #AIforDevs #MachineLearning #GenerativeAI #LLM
-- Cloud: #CloudNative #DevOps #Kubernetes #Serverless
-- Developer: #DeveloperExperience #DevTools #OpenSource #CodeLife
-- Industry: #TechInnovation #FutureOfWork #DigitalTransformation
+### Category Hashtags (Choose per Topic)
+- Industry-relevant hashtags
+- Topic-specific hashtags
+- Community hashtags
 
 ## Content Guidelines
 
 ### Visual Identity
-- **Primary Color**: Electric Blue (#0066FF)
-- **Secondary Color**: Midnight Navy (#1A1A2E)
-- **Accent Color**: Pulse Green (#00E676)
-- **Font**: Inter (headings), Source Code Pro (code snippets)
+- **Primary Color**: #XXXXXX
+- **Secondary Color**: #XXXXXX
+- **Accent Color**: #XXXXXX
+- **Font**: Your brand font family
 
 ### Content Dos and Don'ts
 
@@ -116,7 +118,7 @@ Key highlights:
 
 Try it today → [Link]
 
-#TechPulse #TechPulseAI [relevant hashtags]
+#YourBrand [relevant hashtags]
 ```
 
 ### Quick Tip (X)
@@ -127,7 +129,7 @@ Try it today → [Link]
 
 [CTA: Link or question]
 
-#TechPulse #DevTip [relevant hashtag]
+#YourBrand #Tip [relevant hashtag]
 ```
 
 ### Team Culture (Instagram)
@@ -140,5 +142,5 @@ Try it today → [Link]
 
 [CTA: Question to encourage comments]
 
-#TechPulse #TechLife #TeamCulture [relevant hashtags]
+#YourBrand #TeamCulture [relevant hashtags]
 ```

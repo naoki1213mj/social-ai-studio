@@ -1,4 +1,4 @@
-"""Agent creation and execution logic for TechPulse Social.
+"""Agent creation and execution logic for Social AI Studio.
 
 Creates a single agent with multiple tools and provides streaming execution.
 Uses AzureOpenAIResponsesClient from agent-framework-core.
@@ -8,6 +8,7 @@ import json
 import logging
 import time
 from collections.abc import AsyncIterator
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from agent_framework import AgentResponseUpdate
@@ -24,11 +25,22 @@ from src.tools import generate_content, generate_image, review_content
 
 logger = logging.getLogger(__name__)
 
+
+@dataclass
+class StreamResult:
+    """Accumulated results from agent streaming, including extracted images."""
+
+    images: dict[str, str] = field(default_factory=dict)
+    """Platform → base64 image data, extracted from generate_image tool results."""
+
+
 # Tool event markers (from fabric-foundry-agentic-starter)
 TOOL_EVENT_START = "__TOOL_EVENT__"
 TOOL_EVENT_END = "__END_TOOL_EVENT__"
 REASONING_START = "__REASONING_REPLACE__"
 REASONING_END = "__END_REASONING_REPLACE__"
+IMAGE_DATA_START = "__IMAGE_DATA__"
+IMAGE_DATA_END = "__END_IMAGE_DATA__"
 
 # Reasoning throttle (only send updates every N ms to avoid flooding)
 REASONING_THROTTLE_MS = 100
@@ -196,7 +208,7 @@ async def run_agent_stream(
     # Create agent with all tools (hosted + custom @tool)
     system_prompt = get_system_prompt(ab_mode=ab_mode)
     agent = client.as_agent(
-        name="techpulse_social_agent",
+        name="social_ai_studio_agent",
         instructions=system_prompt,
         tools=tools,
         default_options=default_options if default_options else None,
@@ -280,6 +292,9 @@ async def run_agent_stream(
         # stream=True returns ResponseStream[AgentResponseUpdate, AgentResponse]
         stream = agent.run(query, stream=True)
 
+        # Accumulate extracted image data for post-stream injection
+        stream_result = StreamResult()
+
         async for update in stream:
             # Each update is an AgentResponseUpdate with .contents list
             if not isinstance(update, AgentResponseUpdate):
@@ -338,6 +353,34 @@ async def run_agent_stream(
                         or call_id_to_name.get(call_id)
                         or "unknown_tool"
                     )
+
+                    # ---- Extract image data from generate_image results ----
+                    if tool_name == "generate_image":
+                        result_text = (
+                            getattr(content, "output", None)
+                            or getattr(content, "text", None)
+                            or ""
+                        )
+                        try:
+                            img_result = (
+                                json.loads(result_text)
+                                if isinstance(result_text, str)
+                                else result_text
+                            )
+                            if isinstance(img_result, dict) and img_result.get(
+                                "image_base64"
+                            ):
+                                platform = img_result.get("platform", "unknown")
+                                b64 = img_result["image_base64"]
+                                stream_result.images[platform] = b64
+                                logger.info(
+                                    "Image extracted: platform=%s, b64_length=%d",
+                                    platform,
+                                    len(b64),
+                                )
+                        except (json.JSONDecodeError, TypeError):
+                            logger.warning("Failed to parse generate_image result")
+
                     if call_id and call_id not in emitted_tool_ends:
                         emitted_tool_ends.add(call_id)
                         # OTel: end tool span
@@ -561,6 +604,20 @@ async def run_agent_stream(
         if accumulated_reasoning:
             yield (f"{REASONING_START}{accumulated_reasoning}{REASONING_END}")
 
+        # ---- Emit extracted image data as special markers ----
+        if stream_result.images:
+            for platform, b64 in stream_result.images.items():
+                image_event = json.dumps(
+                    {"platform": platform, "image_base64": b64},
+                    ensure_ascii=False,
+                )
+                yield f"{IMAGE_DATA_START}{image_event}{IMAGE_DATA_END}"
+            logger.info(
+                "Emitted %d image(s): %s",
+                len(stream_result.images),
+                list(stream_result.images.keys()),
+            )
+
         # ---- Finalize OTel pipeline span ----
         pipeline_span.set_attribute(
             "tools.used",
@@ -579,7 +636,7 @@ async def run_agent_stream(
         pipeline_span.end()
         error_event = {
             "type": "error",
-            "message": str(e),
+            "message": "An internal error occurred during content generation.",
         }
-        yield f"data: {json.dumps(error_event)}\n\n"
+        yield json.dumps(error_event) + "\n\n"
         raise

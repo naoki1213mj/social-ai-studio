@@ -1,4 +1,4 @@
-"""Shared test fixtures for TechPulse Social tests."""
+"""Shared test fixtures for Social AI Studio tests."""
 
 import pytest
 

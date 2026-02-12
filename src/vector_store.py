@@ -21,8 +21,8 @@ BRAND_GUIDELINES_PATH = (
     Path(__file__).resolve().parent.parent / "data" / "brand_guidelines.md"
 )
 
-# Azure token scope (must match client.py)
-_AZURE_AI_SCOPE = "https://ai.azure.com/.default"
+# Azure token scope
+from src.config import AZURE_AI_SCOPE as _AZURE_AI_SCOPE
 
 
 def _get_openai_client() -> AzureOpenAI:
@@ -61,7 +61,7 @@ def ensure_vector_store() -> str:
 
     # Create vector store
     vector_store = client.vector_stores.create(
-        name="techpulse_brand_guidelines",
+        name="brand_guidelines",
     )
     vs_id = vector_store.id
     logger.info("Created vector store: %s", vs_id)

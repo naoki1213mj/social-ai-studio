@@ -14,7 +14,7 @@ export const ALL_LOCALES: Locale[] = ["en", "ja", "ko", "zh", "es"];
 
 const translations: Record<Locale, Record<string, string>> = {
   en: {
-    "app.title": "TechPulse Social",
+    "app.title": "Social AI Studio",
     "app.subtitle": "AI-Powered Social Media Content Studio",
     "app.description": "Generate high-quality social media content with reasoning AI",
 
@@ -146,7 +146,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "footer.reasoning": "Reasoning",
   },
   ja: {
-    "app.title": "TechPulse Social",
+    "app.title": "Social AI Studio",
     "app.subtitle": "AI搭載ソーシャルメディアコンテンツスタジオ",
     "app.description": "推論AIで高品質なSNSコンテンツを生成",
 
@@ -278,7 +278,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "footer.reasoning": "推論",
   },
   ko: {
-    "app.title": "TechPulse Social",
+    "app.title": "Social AI Studio",
     "app.subtitle": "AI 기반 소셜 미디어 콘텐츠 스튜디오",
     "app.description": "추론 AI로 고품질 소셜 미디어 콘텐츠 생성",
 
@@ -410,7 +410,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "footer.reasoning": "추론",
   },
   zh: {
-    "app.title": "TechPulse Social",
+    "app.title": "Social AI Studio",
     "app.subtitle": "AI驱动的社交媒体内容工作室",
     "app.description": "使用推理AI生成高质量社交媒体内容",
 
@@ -542,7 +542,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "footer.reasoning": "推理",
   },
   es: {
-    "app.title": "TechPulse Social",
+    "app.title": "Social AI Studio",
     "app.subtitle": "Estudio de Contenido para Redes Sociales con IA",
     "app.description": "Genera contenido de alta calidad para redes sociales con IA de razonamiento",
 

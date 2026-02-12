@@ -312,7 +312,7 @@ function downloadFile(filename: string, content: string, mimeType: string) {
 
 /** Convert structured output to Markdown */
 function toMarkdown(data: StructuredOutput): string {
-  const lines: string[] = ["# TechPulse Social — Generated Content\n"];
+  const lines: string[] = ["# Social AI Studio — Generated Content\n"];
   const now = new Date().toLocaleString();
   lines.push(`> Generated: ${now}\n`);
 
@@ -359,12 +359,12 @@ export default function ContentCards({ data, t, onRefine, safetyResult }: Conten
 
   const handleExportMarkdown = () => {
     const md = toMarkdown(data);
-    downloadFile("techpulse-content.md", md, "text/markdown;charset=utf-8");
+    downloadFile("social-ai-content.md", md, "text/markdown;charset=utf-8");
   };
 
   const handleExportJSON = () => {
     const json = JSON.stringify(data, null, 2);
-    downloadFile("techpulse-content.json", json, "application/json;charset=utf-8");
+    downloadFile("social-ai-content.json", json, "application/json;charset=utf-8");
   };
 
   return (

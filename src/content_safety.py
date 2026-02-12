@@ -1,4 +1,4 @@
-"""Content Safety module for TechPulse Social.
+"""Content Safety module for Social AI Studio.
 
 Integrates Azure AI Content Safety to analyze generated content
 and user inputs for harmful content and prompt injection attacks.
@@ -150,12 +150,13 @@ async def analyze_safety(text: str) -> dict[str, Any]:
 
     except Exception as e:
         logger.warning("Content Safety analysis failed: %s", e)
+        # Fail-closed: treat analysis failure as unsafe to avoid bypassing safety
         return {
-            "safe": True,
+            "safe": False,
             "categories": {},
             "blocked_categories": [],
             "skipped": True,
-            "reason": f"Analysis failed: {e}",
+            "reason": "Analysis temporarily unavailable",
         }
 
 
@@ -216,11 +217,12 @@ async def check_prompt_shield(
 
     except Exception as e:
         logger.warning("Prompt Shield check failed: %s", e)
+        # Fail-closed: treat shield failure as potential attack to avoid bypassing safety
         return {
-            "safe": True,
+            "safe": False,
             "attack_detected": False,
             "skipped": True,
-            "reason": f"Shield check failed: {e}",
+            "reason": "Shield check temporarily unavailable",
         }
 
 

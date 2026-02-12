@@ -400,7 +400,7 @@ hackfest-techconnect2026/
 │   │       └── i18n.ts            # 翻訳データ (EN/JA/KO/ZH/ES)
 │   ├── vite.config.ts
 │   └── package.json
-├── tests/                     # 119 ユニットテスト (pytest + pytest-asyncio)
+├── tests/                     # 120 ユニットテスト (pytest + pytest-asyncio)
 ├── infra/
 │   ├── main.bicep             # Azure インフラ (ACR + Container Apps)
 │   └── main.parameters.json

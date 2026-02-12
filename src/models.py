@@ -1,4 +1,4 @@
-"""Pydantic data models for TechPulse Social API."""
+"""Pydantic data models for Social AI Studio API."""
 
 from __future__ import annotations
 
@@ -8,7 +8,9 @@ from pydantic import BaseModel, Field
 class ChatRequest(BaseModel):
     """Incoming chat request from the frontend."""
 
-    message: str = Field(..., description="User input text")
+    message: str = Field(
+        ..., description="User input text", min_length=1, max_length=10000
+    )
     thread_id: str | None = Field(
         None,
         description="Thread ID for multi-turn conversation (null for first message)",

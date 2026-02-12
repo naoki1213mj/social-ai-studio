@@ -10,6 +10,7 @@ interface ContentDisplayProps {
   isGenerating: boolean;
   onRefine?: (platform: string, feedback: string) => void;
   safetyResult?: SafetyResult | null;
+  imageMap?: Record<string, string>;
 }
 
 /**
@@ -44,12 +45,47 @@ function tryParseOutput(content: string): { type: "normal"; data: StructuredOutp
   return null;
 }
 
+/**
+ * Merge server-side extracted images into parsed structured output.
+ * The imageMap keys are platform names (e.g. "linkedin", "x", "instagram").
+ */
+function mergeImages<T extends StructuredOutput | ABStructuredOutput>(
+  data: T,
+  imageMap: Record<string, string>,
+): T {
+  if (!imageMap || Object.keys(imageMap).length === 0) return data;
+
+  if ("mode" in data && data.mode === "ab") {
+    const ab = data as ABStructuredOutput;
+    const merge = (contents: StructuredOutput["contents"]) =>
+      contents.map((item) => {
+        const key = item.platform?.toLowerCase() ?? "";
+        return imageMap[key] ? { ...item, image_base64: imageMap[key] } : item;
+      });
+    return {
+      ...ab,
+      variant_a: { ...ab.variant_a, contents: merge(ab.variant_a.contents) },
+      variant_b: { ...ab.variant_b, contents: merge(ab.variant_b.contents) },
+    } as T;
+  }
+
+  const normal = data as StructuredOutput;
+  return {
+    ...normal,
+    contents: normal.contents.map((item) => {
+      const key = item.platform?.toLowerCase() ?? "";
+      return imageMap[key] ? { ...item, image_base64: imageMap[key] } : item;
+    }),
+  } as T;
+}
+
 export default function ContentDisplay({
   content,
   t,
   isGenerating,
   onRefine,
   safetyResult,
+  imageMap = {},
 }: ContentDisplayProps) {
   const [copied, setCopied] = useState(false);
 
@@ -69,9 +105,11 @@ export default function ContentDisplay({
   // If structured JSON was parsed successfully, show appropriate cards
   if (parsed && !isGenerating) {
     if (parsed.type === "ab") {
-      return <ABCompareCards data={parsed.data} t={t} onRefine={onRefine} />;
+      const merged = mergeImages(parsed.data, imageMap);
+      return <ABCompareCards data={merged} t={t} onRefine={onRefine} />;
     }
-    return <ContentCards data={parsed.data} t={t} onRefine={onRefine} safetyResult={safetyResult} />;
+    const merged = mergeImages(parsed.data, imageMap);
+    return <ContentCards data={merged} t={t} onRefine={onRefine} safetyResult={safetyResult} />;
   }
 
   // Fallback: show raw Markdown (during streaming or for non-JSON output)

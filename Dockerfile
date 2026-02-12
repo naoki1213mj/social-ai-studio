@@ -35,6 +35,11 @@ ENV HOST=0.0.0.0
 ENV PORT=8000
 ENV SERVE_STATIC=true
 
+# Create non-root user for security
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+RUN chown -R appuser:appgroup /app
+USER appuser
+
 EXPOSE 8000
 
 # Run with uvicorn

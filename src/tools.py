@@ -1,4 +1,4 @@
-"""Custom tool definitions for TechPulse Social agent.
+"""Custom tool definitions for Social AI Studio agent.
 
 Tools are defined with the @tool decorator from agent_framework.
 The LLM decides when and how to call these tools based on context.
@@ -126,7 +126,7 @@ async def review_content(
         "max_characters": max_chars,
         "automated_checks": checks,
         "review_criteria": {
-            "brand_alignment": "Does it match TechPulse's brand voice and messaging pillars?",
+            "brand_alignment": "Does it match the brand's voice and messaging pillars?",
             "audience_relevance": "Is it relevant to the target audience for this platform?",
             "engagement_potential": "Will it drive likes, shares, comments?",
             "clarity": "Is the message clear and concise?",
@@ -210,8 +210,7 @@ async def generate_image(
         f"{prompt}. "
         f"Style: {style}. "
         f"Optimized for {platform_key} social media. "
-        f"Professional, modern, high quality. "
-        f"TechPulse Inc. brand colors: Electric Blue (#0066FF), Deep Navy (#0A1628)."
+        f"Professional, modern, high quality."
     )
 
     logger.info(
@@ -255,7 +254,7 @@ async def generate_image(
         logger.error("Image generation failed: %s", e, exc_info=True)
         error_result = {
             "platform": platform_key,
-            "error": str(e),
+            "error": "Image generation failed. Please try again.",
             "status": "failed",
         }
         return json.dumps(error_result, ensure_ascii=False)

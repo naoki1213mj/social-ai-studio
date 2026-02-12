@@ -1,4 +1,4 @@
-"""Prompt modules for TechPulse Social agent."""
+"""Prompt modules for Social AI Studio agent."""
 
 from src.prompts.system_prompt import SYSTEM_PROMPT, get_system_prompt
 

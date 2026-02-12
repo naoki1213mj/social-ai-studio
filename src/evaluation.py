@@ -1,4 +1,4 @@
-"""Azure AI Evaluation integration for TechPulse Social.
+"""Azure AI Evaluation integration for Social AI Studio.
 
 Provides quality scoring of generated content using Azure AI Evaluation SDK.
 Evaluates: Relevance, Coherence, Fluency, Groundedness.
