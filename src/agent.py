@@ -12,12 +12,14 @@ from datetime import UTC, datetime
 
 from agent_framework import AgentResponseUpdate
 from agent_framework.azure import AzureOpenAIResponsesClient
+from opentelemetry import trace
 
 from src import config
 from src.agentic_retrieval import is_configured as _iq_configured
 from src.agentic_retrieval import search_knowledge_base
 from src.client import get_client
 from src.prompts import get_system_prompt
+from src.telemetry import get_tracer
 from src.tools import generate_content, generate_image, review_content
 
 logger = logging.getLogger(__name__)
@@ -206,6 +208,23 @@ async def run_agent_stream(
     )
     logger.info("Agent processing: %s... (platforms=%s)", message[:80], platforms)
 
+    # ---- OpenTelemetry tracing ----
+    tracer = get_tracer()
+    pipeline_span = tracer.start_span(
+        "reasoning_pipeline",
+        attributes={
+            "reasoning.effort": reasoning_effort,
+            "reasoning.summary": reasoning_summary,
+            "platforms": ",".join(platforms),
+            "content_type": content_type,
+            "language": language,
+            "ab_mode": ab_mode,
+            "tools.count": len(tools),
+        },
+    )
+    ctx = trace.set_span_in_context(pipeline_span)
+    _tool_spans: dict[str, trace.Span] = {}  # call_id → span
+
     # Accumulate reasoning text (SDK sends deltas; we accumulate + REPLACE)
     accumulated_reasoning = ""
     last_reasoning_send = 0.0
@@ -302,6 +321,12 @@ async def run_agent_stream(
                         call_id_to_name[call_id] = tool_name
                     if call_id not in emitted_tool_starts:
                         emitted_tool_starts.add(call_id)
+                        # OTel: start tool span
+                        _tool_spans[call_id] = tracer.start_span(
+                            f"tool.{tool_name}",
+                            context=ctx,
+                            attributes={"tool.name": tool_name},
+                        )
                         yield create_tool_event(tool_name, "started")
 
                 elif ct == "function_result":
@@ -315,6 +340,10 @@ async def run_agent_stream(
                     )
                     if call_id and call_id not in emitted_tool_ends:
                         emitted_tool_ends.add(call_id)
+                        # OTel: end tool span
+                        sp = _tool_spans.pop(call_id, None)
+                        if sp:
+                            sp.end()
                         yield create_tool_event(tool_name, "completed")
 
                 elif ct in (
@@ -532,8 +561,22 @@ async def run_agent_stream(
         if accumulated_reasoning:
             yield (f"{REASONING_START}{accumulated_reasoning}{REASONING_END}")
 
+        # ---- Finalize OTel pipeline span ----
+        pipeline_span.set_attribute(
+            "tools.used",
+            ",".join(sorted(_detected_hosted | set(call_id_to_name.values()))),
+        )
+        pipeline_span.set_attribute("reasoning.chars", len(accumulated_reasoning))
+        pipeline_span.set_status(trace.StatusCode.OK)
+        pipeline_span.end()
+        # End any lingering tool spans
+        for sp in _tool_spans.values():
+            sp.end()
+
     except Exception as e:
         logger.error("Agent execution error: %s", e, exc_info=True)
+        pipeline_span.set_status(trace.StatusCode.ERROR, str(e))
+        pipeline_span.end()
         error_event = {
             "type": "error",
             "message": str(e),

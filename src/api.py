@@ -2,6 +2,7 @@
 
 Provides:
 - POST /api/chat — Streaming chat endpoint (SSE)
+- POST /api/evaluate — Content quality evaluation (Foundry Evaluation)
 - GET /api/health — Health check
 """
 
@@ -14,13 +15,18 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+# ---- OpenTelemetry setup (MUST be before FastAPI import) ---- #
+from src.telemetry import get_tracer, setup_telemetry
 
-from src.agent import REASONING_END, REASONING_START, run_agent_stream
-from src.config import DEBUG
-from src.database import (
+setup_telemetry()
+
+from fastapi import FastAPI, Request  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import JSONResponse, StreamingResponse  # noqa: E402
+
+from src.agent import REASONING_END, REASONING_START, run_agent_stream  # noqa: E402
+from src.config import DEBUG  # noqa: E402
+from src.database import (  # noqa: E402
     delete_conversation,
     get_conversation,
     list_conversations,
@@ -95,7 +101,12 @@ REASONING_PATTERN = re.compile(
 @app.get("/api/health")
 async def health_check() -> dict:
     """Health check endpoint."""
-    return {"status": "ok", "service": "techpulse-social", "version": "0.3.0"}
+    return {
+        "status": "ok",
+        "service": "techpulse-social",
+        "version": "0.4.0",
+        "observability": "opentelemetry",
+    }
 
 
 # ---------- Conversation History API ---------- #
@@ -157,6 +168,7 @@ async def chat(request: Request) -> StreamingResponse:
     async def generate():
         """SSE event generator."""
         assistant_content = ""
+        tracer = get_tracer()
 
         try:
             async for chunk in run_agent_stream(
@@ -257,6 +269,47 @@ if _SERVE_STATIC and _STATIC_DIR.is_dir():
         return FileResponse(_STATIC_DIR / "index.html")
 
     logger.info("Serving frontend static files from %s", _STATIC_DIR)
+
+
+# ---------- Foundry Evaluation Endpoint ---------- #
+
+
+@app.post("/api/evaluate")
+async def evaluate_content_endpoint(request: Request):
+    """Evaluate content quality using Azure AI Evaluation SDK.
+
+    Accepts JSON: {query, response, context?}
+    Returns: {relevance, coherence, fluency, groundedness?, ...}
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON"}, status_code=400)
+
+    query = body.get("query", "")
+    response_text = body.get("response", "")
+    context = body.get("context")
+
+    if not query or not response_text:
+        return JSONResponse(
+            {"error": "query and response are required"}, status_code=400
+        )
+
+    from src.evaluation import evaluate_content, is_configured
+
+    if not is_configured():
+        return JSONResponse(
+            {
+                "error": "Evaluation not configured",
+                "hint": "Install azure-ai-evaluation: uv add azure-ai-evaluation",
+            },
+            status_code=501,
+        )
+
+    scores = await evaluate_content(
+        query=query, response=response_text, context=context
+    )
+    return scores
 
 
 def main() -> None:

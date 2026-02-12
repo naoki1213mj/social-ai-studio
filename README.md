@@ -1,10 +1,42 @@
 # TechPulse Social — AI-Powered Social Media Content Studio
 
+![Python 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python)
+![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript)
+![Tests](https://img.shields.io/badge/tests-119%20passed-brightgreen)
+![Azure](https://img.shields.io/badge/Azure-Foundry-0078d4?logo=microsoftazure)
+![License](https://img.shields.io/badge/license-Hackathon-orange)
+
 > **Agents League @ TechConnect 2026** — Reasoning Agents Track
 
-An AI-powered content creation pipeline for **TechPulse Inc.** that assists the communication team in creating platform-optimized social media content for LinkedIn, X (Twitter), and Instagram — featuring **gpt-5.2 reasoning**, **File Search grounding**, **Foundry IQ Agentic Retrieval**, **GPT Image generation**, **Human-in-the-Loop review**, **Cosmos DB conversation history**, **Azure Container Apps deployment**, **5-language i18n** (EN/JA/KO/ZH/ES), **glassmorphism UI**, and **real-time SSE streaming** with reasoning phase visualization.
+An AI-powered content creation pipeline for **TechPulse Inc.** that assists the communication team in creating platform-optimized social media content for LinkedIn, X (Twitter), and Instagram.
 
-## Architecture
+**Single reasoning agent (gpt-5.2) × 7 tools × 3-phase thinking pipeline × production-grade observability**
+
+## 🎬 Demo Video
+
+<!-- TODO: Add demo video link after recording -->
+_Coming soon — 3 min walkthrough of the full reasoning pipeline_
+
+## ✨ Key Features at a Glance
+
+| Category | Feature |
+|----------|---------|
+| 🧠 **Reasoning** | 3-phase pipeline (CoT → ReAct → Self-Reflection) with live phase badges |
+| 🔧 **7 Agent Tools** | Web Search, File Search, MCP Docs, Foundry IQ, Content Gen, Review, Image Gen |
+| 🎯 **A/B Comparison** | Two content variants with different strategies, side-by-side radar charts |
+| 👤 **HITL Workflow** | Approve ✅ / Edit ✏️ / Refine 🔄 per platform card |
+| 📊 **Quality Scoring** | 5-axis radar chart + Foundry Evaluation (Relevance, Coherence, Fluency, Groundedness) |
+| 🔍 **Observability** | OpenTelemetry → Azure Application Insights → Foundry Tracing |
+| 🖼️ **Image Generation** | gpt-image-1.5 creates platform-optimized visuals |
+| 💾 **Persistence** | Cosmos DB conversation history with in-memory fallback |
+| 🌐 **5-Language i18n** | EN / JA / KO / ZH / ES with flag-based selector |
+| 🌙 **Dark / Light Mode** | System-preference-aware theme switching |
+| ✨ **Glassmorphism UI** | Frosted glass, gradient borders, animated tool pills |
+| 🚀 **One-Command Deploy** | `azd up` → Azure Container Apps |
+| ✅ **119 Unit Tests** | Comprehensive backend test suite |
+
+## 🏗️ Architecture
 
 ```mermaid
 graph TB
@@ -15,31 +47,37 @@ graph TB
         Reasoning["ReasoningPanel<br/>Phase Badges"]
         Tools["Tool Pills<br/>Real-time Badges"]
         Export["Export .md / .json"]
-        History["HistorySidebar<br/>Conversation List"]
+        History["HistorySidebar"]
+        AB["A/B Compare Cards"]
     end
 
     subgraph Backend["FastAPI + SSE Streaming"]
         API["POST /api/chat"]
+        EvalAPI["POST /api/evaluate"]
         HistAPI["GET /api/conversations"]
         Agent["gpt-5.2 Reasoning Agent"]
+        Telemetry["OpenTelemetry<br/>Distributed Tracing"]
     end
 
-    subgraph AgentTools["Agent Tools"]
+    subgraph AgentTools["7 Agent Tools"]
         WS["🌐 Web Search<br/>Bing Grounding"]
         FS["📁 File Search<br/>Brand Guidelines"]
+        MCP["📘 MCP Server<br/>Microsoft Learn"]
         IQ["🔍 Foundry IQ<br/>Agentic Retrieval"]
-        GC["✏️ generate_content<br/>Platform Rules"]
-        RC["📋 review_content<br/>Quality Scoring"]
-        GI["🖼️ generate_image<br/>gpt-image-1.5"]
+        GC["✏️ generate_content"]
+        RC["📋 review_content"]
+        GI["🖼️ generate_image"]
     end
 
-    subgraph Azure["Microsoft Foundry"]
+    subgraph Azure["Microsoft Foundry + Azure"]
         GPT52["gpt-5.2"]
         GPTImg["gpt-image-1.5"]
-        VS["Vector Store<br/>brand_guidelines.md"]
+        VS["Vector Store"]
         Bing["Bing Grounding"]
-        AIS["Azure AI Search<br/>Knowledge Base"]
-        Cosmos["Cosmos DB<br/>Conversation History"]
+        AIS["Azure AI Search"]
+        Cosmos["Cosmos DB"]
+        AppInsights["Application Insights"]
+        Eval["Foundry Evaluation"]
     end
 
     UI -->|ChatRequest + SSE| API
@@ -47,7 +85,7 @@ graph TB
     API -->|stream=True| Agent
     API -->|save| Cosmos
     HistAPI -->|query| Cosmos
-    Agent --> WS & FS & IQ & GC & RC & GI
+    Agent --> WS & FS & MCP & IQ & GC & RC & GI
     WS --> Bing
     FS --> VS
     IQ --> AIS
@@ -58,57 +96,113 @@ graph TB
     Cards --> HITL
     HITL -->|Refine feedback| API
     Cards --> Export
+    Telemetry -->|Traces| AppInsights
+    EvalAPI --> Eval
+    AB --> Cards
 ```
 
-## Reasoning Patterns (3-Phase Pipeline)
+## 🧠 Reasoning Pipeline (3-Phase)
 
-All three patterns are integrated into a **single system prompt** — the agent autonomously progresses through each phase. The UI displays **live phase badges** that highlight the active stage:
+All three reasoning patterns are integrated into a **single system prompt** — the agent autonomously progresses through each phase. The UI displays **live phase badges** that highlight the active stage:
 
-| Phase | Pattern | Description | Badge Color |
+| Phase | Pattern | What Happens | UI Indicator |
 |-------|---------|-------------|-------------|
-| 1 | **Chain-of-Thought (CoT)** | Strategic analysis: topic analysis, audience identification, key message planning | 💭 Indigo |
-| 2 | **ReAct (Reasoning + Acting)** | Content creation: tool invocations (web search → file search → content generation → image generation) interleaved with reasoning | ⚡ Amber |
-| 3 | **Self-Reflection** | Quality review: self-evaluate on 5 axes, revise if any score < 7 | 🔍 Emerald |
+| 1 | **Chain-of-Thought (CoT)** | Strategic analysis — topic decomposition, audience identification, key message planning | 💭 Indigo badge (pulsing) |
+| 2 | **ReAct (Reasoning + Acting)** | Content creation — web search → file search → MCP docs → content generation, interleaved with reasoning | ⚡ Amber badge (pulsing) |
+| 3 | **Self-Reflection** | Quality review — self-evaluate on 5 axes, revise if any score < 7 | 🔍 Emerald badge (pulsing) |
 
-The user can control reasoning depth (low/medium/high) and thinking display (off/auto/concise/detailed) via the AI Settings panel.
+The user controls reasoning depth (`low`/`medium`/`high`) and thinking display (`off`/`auto`/`concise`/`detailed`) via the AI Settings panel.
 
-## Key Differentiators
+## 🔧 Agent Tools (7 Total)
 
-### Human-in-the-Loop (HITL) Workflow
+| Tool | Type | Purpose |
+|------|------|---------|
+| `web_search` | Hosted (Bing Grounding) | Real-time trend research and latest news |
+| `file_search` | Hosted (Vector Store) | Brand guidelines grounding |
+| `mcp` | Hosted (MCP Server) | Microsoft Learn docs — technical claim verification |
+| `search_knowledge_base` | Custom (@tool) | Foundry IQ Agentic Retrieval — deep document search |
+| `generate_content` | Custom (@tool) | Platform-optimized content generation with LinkedIn/X/Instagram rules |
+| `review_content` | Custom (@tool) | 5-axis quality scoring + improvement feedback |
+| `generate_image` | Custom (@tool) | gpt-image-1.5 visual generation |
+
+## 🔍 Observability & Evaluation
+
+### OpenTelemetry + Azure Application Insights
+
+Production-grade distributed tracing across the entire reasoning pipeline:
+
+- **Pipeline span** — covers the full agent execution with attributes (reasoning effort, platforms, tool count)
+- **Tool spans** — individual spans for each tool invocation (start → complete with duration)
+- **Auto-instrumented** — FastAPI requests, HTTP calls, Azure SDK operations
+- **Agent framework instrumentation** — agent-framework-core's built-in OTel support via `enable_instrumentation()`
+
+Traces flow to:
+
+- **Azure Application Insights** → End-to-end transaction view, Live Metrics
+- **Microsoft Foundry** → Observability → Traces (auto-correlated with agent runs)
+
+```python
+# Automatic setup — just set APPLICATIONINSIGHTS_CONNECTION_STRING in .env
+from src.telemetry import setup_telemetry
+setup_telemetry()  # Configures OTel → Azure Monitor before FastAPI init
+```
+
+### Foundry Evaluation (azure-ai-evaluation SDK)
+
+AI-assisted quality metrics for generated content:
+
+| Metric | Scale | What It Measures |
+|--------|-------|-----------------|
+| **Relevance** | 1-5 | Does the content address the user's topic? |
+| **Coherence** | 1-5 | Is the content logically structured? |
+| **Fluency** | 1-5 | Is the language natural and well-written? |
+| **Groundedness** | 1-5 | Is the content grounded in provided context? |
+
+These complement the agent's built-in 5-axis self-review (brand alignment, platform optimization, engagement potential, factual accuracy, content quality) for a **dual evaluation system**.
+
+## 👤 Human-in-the-Loop (HITL) Workflow
+
 Each platform content card includes:
-- **✅ Approve** — Mark content as approved (visual stamp)
+
+- **✅ Approve** — Mark content as approved (visual stamp appears)
 - **✏️ Edit** — Inline text editing with save/cancel
 - **🔄 Refine** — Send natural language feedback to the AI agent for targeted improvement
 
-The Refine feature sends a follow-up message to the same conversation thread, allowing the agent to improve specific platform content while preserving the context of the original request.
+The Refine feature sends a follow-up message to the same conversation thread, allowing the agent to improve specific platform content while preserving context.
 
-### Content Export
-- **📥 Export as Markdown** — Download all generated content, hashtags, CTAs, quality scores, and sources as a structured `.md` file
-- **📥 Export as JSON** — Download the raw structured output for integration with other tools or CMS systems
+## 🎯 A/B Content Comparison
 
-### Reasoning Phase Visualization
-Real-time phase detection using keyword analysis on the reasoning stream:
-- Phase badges light up and pulse as the agent progresses through CoT → ReAct → Self-Reflection
-- Completed phases show a checkmark
-- The full reasoning text is available in a collapsible panel
+Toggle A/B mode in AI Settings to generate **two content variants with different strategies**:
 
-## Tech Stack
+- Side-by-side comparison cards with mini radar charts
+- Winner badge highlighting the stronger variant
+- Select preferred variant to expand into full ContentCards view with all HITL/export features
+
+## 📦 Content Export
+
+- **📥 Export as Markdown** — Structured `.md` with content, hashtags, CTAs, quality scores, and sources
+- **📥 Export as JSON** — Raw structured output for CMS integration
+
+## 🛠️ Tech Stack
 
 | Layer | Technology |
-| ---------- | ----------- |
-| Models | **gpt-5.2** (reasoning), **gpt-image-1.5** (image generation) |
-| Platform | **Microsoft Foundry** (Azure AI Foundry) |
-| Agent SDK | **agent-framework-core** (Responses API + `@tool` decorator) |
-| Grounding | **File Search** (Vector Store), **Web Search** (Bing Grounding), **Foundry IQ** (Agentic Retrieval) |
-| Database | **Azure Cosmos DB** (conversation history, in-memory fallback) |
-| Auth | **DefaultAzureCredential** (Azure CLI) |
-| Backend | **FastAPI** + **uvicorn** (SSE streaming) |
-| Frontend | **React 19** + **TypeScript** + **Vite 7** + **Tailwind CSS v3** |
-| UI | **lucide-react** icons, **react-markdown**, **recharts** |
-| Deployment | **Azure Container Apps** via **azd** (Dockerfile multi-stage build) |
-| Package Mgr | **uv** (Python), **npm** (Node.js) |
+|-------|-----------|
+| **Models** | gpt-5.2 (reasoning), gpt-image-1.5 (image generation) |
+| **Platform** | Microsoft Foundry (Azure AI Foundry) |
+| **Agent SDK** | agent-framework-core (Responses API + `@tool` decorator) |
+| **Grounding** | File Search (Vector Store), Web Search (Bing), MCP (Microsoft Learn), Foundry IQ (Agentic Retrieval) |
+| **Observability** | OpenTelemetry → Azure Application Insights → Foundry Tracing |
+| **Evaluation** | azure-ai-evaluation SDK (Relevance, Coherence, Fluency, Groundedness) |
+| **Database** | Azure Cosmos DB (conversation history, in-memory fallback) |
+| **Auth** | DefaultAzureCredential (Azure CLI / Managed Identity) |
+| **Backend** | FastAPI + uvicorn (SSE streaming) |
+| **Frontend** | React 19 + TypeScript 5 + Vite 7 + Tailwind CSS v3 |
+| **UI Components** | lucide-react icons, react-markdown, recharts (radar charts) |
+| **Deployment** | Azure Container Apps via azd (multi-stage Docker build) |
+| **Package Mgr** | uv (Python), npm (Node.js) |
+| **Testing** | pytest + pytest-asyncio (119 tests) |
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
@@ -142,15 +236,12 @@ npx vite
 
 Open <http://localhost:5173> in your browser.
 
-### Deploy to Azure (Optional)
+### Deploy to Azure
 
 Deploy to Azure Container Apps with a single command using [Azure Developer CLI (azd)](https://learn.microsoft.com/azure/developer/azure-developer-cli/):
 
 ```bash
-# Login
 azd auth login
-
-# Deploy (provisions ACR + Container Apps + Log Analytics)
 azd up
 ```
 
@@ -158,61 +249,64 @@ This builds a multi-stage Docker image (Node.js frontend → Python backend) and
 
 ### Environment Variables
 
-| Variable | Description | Required | Example |
-| ---------- | ----------- | -------- | --------- |
-| `PROJECT_ENDPOINT` | Azure AI Foundry project endpoint | **Yes** | `https://<resource>.services.ai.azure.com/api/projects/<project>` |
-| `MODEL_DEPLOYMENT_NAME` | Reasoning model deployment | **Yes** | `gpt-5.2` |
-| `IMAGE_DEPLOYMENT_NAME` | Image model deployment | **Yes** | `gpt-image-1.5` |
-| `VECTOR_STORE_ID` | Auto-generated on first run | No | (leave empty) |
-| `COSMOS_ENDPOINT` | Cosmos DB endpoint (in-memory fallback if not set) | No | `https://<account>.documents.azure.com:443/` |
-| `COSMOS_DATABASE` | Cosmos DB database name | No | `techpulse-social` |
-| `COSMOS_CONTAINER` | Cosmos DB container name | No | `conversations` |
-| `AI_SEARCH_ENDPOINT` | Azure AI Search endpoint (Foundry IQ) | No | `https://<service>.search.windows.net` |
-| `AI_SEARCH_KNOWLEDGE_BASE_NAME` | Knowledge Base name | No | `my-knowledge-base` |
-| `AI_SEARCH_REASONING_EFFORT` | Agentic retrieval reasoning effort | No | `low` |
-| `DEBUG` | Enable debug logging | No | `false` |
-| `SERVE_STATIC` | Serve frontend from backend (Docker) | No | `false` |
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `PROJECT_ENDPOINT` | Azure AI Foundry project endpoint | **Yes** |
+| `MODEL_DEPLOYMENT_NAME` | Reasoning model deployment | **Yes** |
+| `IMAGE_DEPLOYMENT_NAME` | Image model deployment | **Yes** |
+| `VECTOR_STORE_ID` | Auto-generated on first run | No |
+| `COSMOS_ENDPOINT` | Cosmos DB endpoint | No |
+| `COSMOS_DATABASE` | Cosmos DB database name | No |
+| `COSMOS_CONTAINER` | Cosmos DB container name | No |
+| `AI_SEARCH_ENDPOINT` | Azure AI Search endpoint (Foundry IQ) | No |
+| `AI_SEARCH_KNOWLEDGE_BASE_NAME` | Knowledge Base name | No |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | App Insights for distributed tracing | No |
+| `OTEL_SERVICE_NAME` | OpenTelemetry service name | No |
+| `EVAL_MODEL_DEPLOYMENT` | Model for Foundry Evaluation | No |
+| `DEBUG` | Enable debug logging | No |
 
-## Project Structure
+## 📁 Project Structure
 
 ```text
 ├── src/
-│   ├── __init__.py          # Package metadata
 │   ├── config.py            # Environment configuration
-│   ├── client.py            # AzureOpenAIResponsesClient singleton + monkey-patch
-│   ├── agent.py             # Agent creation, reasoning options, SSE streaming
+│   ├── client.py            # AzureOpenAIResponsesClient singleton
+│   ├── agent.py             # Agent creation, reasoning pipeline, SSE streaming, OTel tracing
 │   ├── tools.py             # Custom tools: generate_content, review_content, generate_image
 │   ├── vector_store.py      # Vector Store auto-creation & File Search provisioning
 │   ├── database.py          # Cosmos DB conversation history (in-memory fallback)
 │   ├── agentic_retrieval.py # Foundry IQ Agentic Retrieval tool
+│   ├── telemetry.py         # OpenTelemetry + Azure Monitor setup
+│   ├── evaluation.py        # Foundry Evaluation integration (azure-ai-evaluation)
 │   ├── models.py            # Pydantic data models
 │   ├── prompts/
 │   │   └── system_prompt.py # 3-phase reasoning prompt (CoT + ReAct + Self-Reflection)
-│   └── api.py               # FastAPI endpoints (SSE streaming + static serving)
+│   └── api.py               # FastAPI endpoints (SSE streaming, evaluation, static serving)
 ├── frontend/
 │   ├── src/
-│   │   ├── App.tsx           # Main application w/ HITL + retry + elapsed timer
+│   │   ├── App.tsx               # Main application w/ HITL + retry + elapsed timer
 │   │   ├── components/
-│   │   │   ├── InputForm.tsx        # Topic input + AI Settings panel + Stop/Submit toggle
-│   │   │   ├── ContentCards.tsx     # Platform cards + HITL controls + Export
-│   │   │   ├── ContentDisplay.tsx   # JSON → Cards parser + Markdown fallback + Skeleton
-│   │   │   ├── ReasoningPanel.tsx   # Collapsible panel + Phase Badges (CoT/ReAct/Reflect)
-│   │   │   ├── ToolEvents.tsx       # Tool status indicator (category grouping)
-│   │   │   ├── SuggestedQuestions.tsx # Empty-state clickable examples
-│   │   │   ├── HistorySidebar.tsx   # Conversation history sidebar
-│   │   │   └── Header.tsx           # App header with theme/locale toggles
+│   │   │   ├── InputForm.tsx     # Topic input + AI Settings panel
+│   │   │   ├── ContentCards.tsx  # Platform cards + HITL controls + Export
+│   │   │   ├── ContentDisplay.tsx # JSON → Cards parser + Skeleton
+│   │   │   ├── ReasoningPanel.tsx # Collapsible panel + Phase Badges
+│   │   │   ├── ToolEvents.tsx    # Animated tool usage pills
+│   │   │   ├── ABCompareCards.tsx # A/B variant comparison
+│   │   │   ├── HistorySidebar.tsx # Conversation history
+│   │   │   ├── SuggestedQuestions.tsx
+│   │   │   └── Header.tsx
 │   │   ├── hooks/            # useTheme, useI18n
-│   │   └── lib/              # api.ts (SSE client), i18n.ts (EN/JA/KO/ZH/ES)
+│   │   └── lib/              # api.ts (SSE client), i18n.ts (5 languages)
 │   ├── vite.config.ts
 │   └── package.json
+├── tests/                    # 119 unit tests (pytest + pytest-asyncio)
 ├── infra/
 │   ├── main.bicep            # Azure infrastructure (ACR + Container Apps)
-│   ├── main.parameters.json  # azd parameter mappings
-│   └── abbreviations.json    # Resource name prefixes
+│   └── main.parameters.json
 ├── data/
 │   └── brand_guidelines.md   # TechPulse brand guide (uploaded to Vector Store)
 ├── docs/
-│   ├── DESIGN.md             # Design decisions
+│   ├── DESIGN.md             # Architecture design document
 │   └── SPEC.md               # Technical specification
 ├── Dockerfile                # Multi-stage build (Node frontend + Python backend)
 ├── azure.yaml                # Azure Developer CLI project config
@@ -220,50 +314,9 @@ This builds a multi-stage Docker image (Node.js frontend → Python backend) and
 └── .env.example
 ```
 
-## Features
+## 📋 API Reference
 
-### Agent Capabilities
-
-- **7 Tools** — web_search (Bing), file_search (Vector Store), mcp (Microsoft Learn Docs), search_knowledge_base (Foundry IQ), generate_content, review_content, generate_image
-- **Controllable Reasoning** — User-adjustable reasoning depth (low/medium/high) and thinking display (off/auto/concise/detailed)
-- **Brand Grounding** — File Search against brand guidelines via Azure AI Vector Store
-- **Enterprise Knowledge** — Foundry IQ Agentic Retrieval for deep document search with configurable reasoning effort
-- **Real-time Trends** — Web Search via Bing Grounding for latest data
-- **MCP Server Integration** — Microsoft Learn Docs via Streamable HTTP for technical claim verification and official references
-- **Image Generation** — gpt-image-1.5 creates platform-optimized visuals
-- **A/B Content Comparison** — Generate two content variants with different strategies for side-by-side evaluation
-- **Structured Output** — Agent returns JSON parsed into platform-specific content cards
-- **Conversation History** — Cosmos DB persistence with in-memory fallback
-
-### Frontend Experience
-
-- **Platform Content Cards** — LinkedIn (blue), X (gray), Instagram (pink/purple) with per-card copy
-- **HITL Controls** — Approve ✅ / Edit ✏️ / Refine 🔄 per card with inline editing and AI-powered refinement
-- **Conversation History** — Collapsible sidebar with persistent conversation list, load/delete/new
-- **Content Export** — Download as Markdown (.md) or JSON for team sharing and CMS integration
-- **Reasoning Phase Badges** — Live CoT → ReAct → Self-Reflection phase indicators with pulse animation
-- **Generated Images** — Displayed inline in content cards
-- **Reasoning Visualization** — Collapsible panel with purple/indigo gradient showing CoT process
-- **Quality Review** — 5-axis radar chart (recharts) + score bars with overall score gradient display
-- **Content Safety Badge** — Visual indicator showing content passed safety checks
-- **Processing Metrics** — Post-generation stats (reasoning chars, tools used, output chars)
-- **A/B Compare Cards** — Side-by-side variant comparison with winner badge, mini radar charts, and variant selection
-- **Tool Usage Pills** — Always-visible animated pill badges for each tool (Web Search, File Search, MCP Docs, etc.) with gradient glow during execution
-- **Skeleton Loading** — Shimmer placeholders during content generation
-- **Card Animations** — Staggered fade-in on content card appearance
-- **Stop / Retry** — Abort generation or retry with one click
-- **Elapsed Timer** — Real-time generation duration display
-- **Keyboard Shortcuts** — Ctrl+Enter to submit, Escape to stop
-- **Suggested Questions** — Empty-state grid with 4 clickable examples (float-in animation)
-- **Internationalization** — Full 5-language support (EN/JA/KO/ZH/ES) with flag-based dropdown selector
-- **Dark/Light Mode** — System-preference-aware theme switching
-- **Glassmorphism UI** — Frosted glass cards, gradient backgrounds, backdrop blur effects
-- **Gradient Design** — Gradient submit button, animated gradient borders on hover, brand gradient header
-- **Micro-animations** — Float-in suggestions, dropdown transitions, platform chip glow effects
-
-## API
-
-### `POST /api/chat`
+### `POST /api/chat` — Streaming Chat
 
 ```json
 {
@@ -277,29 +330,90 @@ This builds a multi-stage Docker image (Node.js frontend → Python backend) and
 }
 ```
 
-Returns an SSE stream with:
+Returns SSE stream:
 
-- `{"type": "reasoning_update", "reasoning": "..."}` — Thinking tokens (JSON envelope, safe from SSE framing issues)
+- `{"type": "reasoning_update", "reasoning": "..."}` — Thinking tokens
 - `__TOOL_EVENT__...__END_TOOL_EVENT__` — Tool usage events
-- `{ "choices": [...], "thread_id": "..." }` — Content chunks (cumulative)
-- `{ "type": "done" }` — Completion signal
+- `{"choices": [...], "thread_id": "..."}` — Content chunks
+- `{"type": "done"}` — Completion signal
 
-The final content is structured JSON with platform-specific posts, quality review scores, and source citations.
+### `POST /api/evaluate` — Content Quality Evaluation
+
+```json
+{
+  "query": "AI trends 2026",
+  "response": "Generated content text...",
+  "context": "Optional grounding context..."
+}
+```
+
+Returns: `{"relevance": 4.5, "coherence": 5.0, "fluency": 4.0, "groundedness": 4.5}`
 
 ### `GET /api/health`
 
-Returns `{"status": "ok", "service": "techpulse-social", "version": "0.3.0"}`.
+```json
+{"status": "ok", "service": "techpulse-social", "version": "0.4.0", "observability": "opentelemetry"}
+```
 
-## Judging Criteria Mapping
+### Other Endpoints
+
+- `GET /api/conversations` — List all conversations
+- `GET /api/conversations/{id}` — Get conversation with messages
+- `DELETE /api/conversations/{id}` — Delete conversation
+
+## ✨ Frontend Features
+
+### Content & Generation
+
+- **Platform Content Cards** — LinkedIn (blue), X (gray), Instagram (pink) with per-card copy
+- **Reasoning Phase Badges** — Live CoT → ReAct → Self-Reflection indicators with pulse animation
+- **Tool Usage Pills** — Animated gradient-glow badges (Web Search, File Search, MCP, Content Gen, etc.)
+- **Quality Radar Chart** — 5-axis recharts visualization with overall score
+- **Content Safety Badge** — Visual safety indicator
+- **Processing Metrics** — Post-generation stats bar (reasoning chars, tools used, output chars)
+- **A/B Compare Cards** — Side-by-side variants with mini radar charts and winner badge
+
+### Interaction
+
+- **HITL Controls** — Approve / Edit / Refine per card with inline editing
+- **Conversation History** — Collapsible sidebar with persistent conversation list
+- **Content Export** — Download as Markdown (.md) or JSON
+- **Stop / Retry** — Abort or retry generation with one click
+- **Keyboard Shortcuts** — Ctrl+Enter to submit, Escape to stop
+- **Suggested Questions** — Empty-state grid with 4 clickable examples
+
+### Design
+
+- **Glassmorphism UI** — Frosted glass cards, gradient backgrounds, backdrop blur
+- **Gradient Design** — Animated gradient borders, brand gradient header
+- **Skeleton Loading** — Shimmer placeholders during generation
+- **Card Animations** — Staggered fade-in on content card appearance
+- **Dark / Light Mode** — System-preference-aware
+- **5-Language i18n** — EN / JA / KO / ZH / ES with flag selector
+
+## 🏆 Judging Criteria Mapping
 
 | Criteria | Weight | How TechPulse Social Addresses It |
 |----------|--------|-----------------------------------|
-| **Accuracy & Relevance** | 25% | 6 tools (web search, file search, Foundry IQ, content gen, review, image gen), brand grounding via Vector Store + Agentic Retrieval, platform-specific rules |
-| **Reasoning & Multi-step Thinking** | 25% | 3-phase pipeline (CoT → ReAct → Self-Reflection), live phase badges, controllable depth, collapsible reasoning panel |
-| **Creativity & Originality** | 20% | HITL workflow (approve/edit/refine), reasoning phase visualization, content export, GPT Image generation, conversation history |
-| **User Experience & Presentation** | 15% | Polished glassmorphism UI with animations, gradient design, skeleton loading, dark/light mode, 5-language i18n (EN/JA/KO/ZH/ES), keyboard shortcuts, suggested questions, history sidebar |
-| **Technical Implementation** | 15% | agent-framework-core SDK, SSE streaming, singleton client, Cosmos DB, Foundry IQ Agentic Retrieval, azd Container Apps deployment, multi-stage Docker build |
+| **Accuracy & Relevance** | 25% | 7 tools (web search, file search, MCP, Foundry IQ, content gen, review, image gen), brand grounding via Vector Store, Foundry Evaluation (Relevance + Groundedness scoring), dual quality assessment |
+| **Reasoning & Multi-step Thinking** | 25% | 3-phase pipeline (CoT → ReAct → Self-Reflection), live phase badges, controllable depth (low/medium/high), OpenTelemetry tracing of reasoning pipeline with per-tool spans |
+| **Creativity & Originality** | 20% | HITL workflow (approve/edit/refine), A/B content comparison with strategy variants, reasoning phase visualization, GPT Image generation, MCP Server integration, dual evaluation system (self-review + Foundry metrics) |
+| **User Experience & Presentation** | 15% | Polished glassmorphism UI with animations, dark/light mode, 5-language i18n, skeleton loading, suggested questions, keyboard shortcuts, conversation history, content export (Markdown + JSON) |
+| **Technical Implementation** | 15% | agent-framework-core SDK, SSE streaming with OTel distributed tracing, Cosmos DB persistence, Azure Container Apps deployment via azd, 119 unit tests, OpenTelemetry → Application Insights pipeline, Foundry Evaluation SDK integration |
+
+## 🧪 Testing
+
+```bash
+# Run all 119 tests
+uv run python -m pytest tests/ -q
+
+# With verbose output
+uv run python -m pytest tests/ -v
+
+# With coverage
+uv run python -m pytest tests/ --cov=src --cov-report=term-missing
+```
 
 ## License
 
-Hackathon project — TechConnect 2026
+Hackathon project — Agents League @ TechConnect 2026

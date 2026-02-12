@@ -47,5 +47,15 @@ RESPONSES_API_BASE_URL: str = (
 HOST: str = os.getenv("HOST", "0.0.0.0")
 PORT: int = int(os.getenv("PORT", "8000"))
 
+# Observability (OpenTelemetry + Application Insights)
+APPLICATIONINSIGHTS_CONNECTION_STRING: str = os.getenv(
+    "APPLICATIONINSIGHTS_CONNECTION_STRING", ""
+)
+OTEL_SERVICE_NAME: str = os.getenv("OTEL_SERVICE_NAME", "techpulse-social")
+
+# Evaluation
+EVAL_MODEL_DEPLOYMENT: str = os.getenv("EVAL_MODEL_DEPLOYMENT", "gpt-4o-mini")
+
 # Feature flags
 DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
+SERVE_STATIC: bool = os.getenv("SERVE_STATIC", "false").lower() == "true"
