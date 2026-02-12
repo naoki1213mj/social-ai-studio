@@ -6,6 +6,7 @@ The LLM decides when and how to call these tools based on context.
 
 import json
 import logging
+from contextvars import ContextVar
 from typing import Annotated
 
 from agent_framework import tool
@@ -15,6 +16,35 @@ from openai import AzureOpenAI
 from src.config import AZURE_AI_SCOPE, IMAGE_DEPLOYMENT_NAME, PROJECT_ENDPOINT
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Per-request image storage (side-channel via ContextVar)
+# ---------------------------------------------------------------------------
+# Images are stored here by the generate_image tool and retrieved by agent.py
+# after streaming completes. This avoids sending heavy base64 data through
+# the LLM (which wastes tokens and may be truncated by the SDK).
+_pending_images: ContextVar[dict[str, str]] = ContextVar("pending_images", default=None)
+
+
+def init_image_store() -> None:
+    """Initialize the per-request image store.
+
+    Must be called at the start of each agent run so that the
+    generate_image tool can store images for later retrieval.
+    """
+    _pending_images.set({})
+
+
+def pop_pending_images() -> dict[str, str]:
+    """Pop and return all pending images from the current request.
+
+    Returns:
+        Dict mapping platform name to base64 image data.
+    """
+    store = _pending_images.get(None) or {}
+    _pending_images.set({})
+    return store
+
 
 # Platform character limits and formatting rules
 PLATFORM_RULES: dict[str, dict] = {
@@ -233,13 +263,33 @@ async def generate_image(
         image_b64 = response.data[0].b64_json
         revised_prompt = getattr(response.data[0], "revised_prompt", prompt)
 
+        # Store image in per-request side-channel (NOT returned to LLM)
+        # This avoids sending ~1-2MB of base64 through the model context
+        store = _pending_images.get(None)
+        if store is not None:
+            store[platform_key] = image_b64
+            logger.info(
+                "Image stored in side-channel: platform=%s, b64_length=%d",
+                platform_key,
+                len(image_b64) if image_b64 else 0,
+            )
+        else:
+            logger.warning(
+                "Image store not initialized — image will not be displayed. "
+                "Ensure init_image_store() is called before agent.run()."
+            )
+
+        # Return only metadata to the LLM (no heavy base64 data)
         result = {
             "platform": platform_key,
-            "image_base64": image_b64,
             "size": size,
             "style": style,
             "revised_prompt": revised_prompt,
             "status": "generated",
+            "message": (
+                f"Image successfully generated for {platform_key} ({size}). "
+                "The image will be automatically displayed in the content card."
+            ),
         }
 
         logger.info(

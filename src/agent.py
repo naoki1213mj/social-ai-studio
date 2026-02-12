@@ -21,7 +21,13 @@ from src.agentic_retrieval import search_knowledge_base
 from src.client import get_client
 from src.prompts import get_system_prompt
 from src.telemetry import get_tracer
-from src.tools import generate_content, generate_image, review_content
+from src.tools import (
+    generate_content,
+    generate_image,
+    init_image_store,
+    pop_pending_images,
+    review_content,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -289,6 +295,9 @@ async def run_agent_stream(
     }
 
     try:
+        # Initialize per-request image store (side-channel for generate_image)
+        init_image_store()
+
         # stream=True returns ResponseStream[AgentResponseUpdate, AgentResponse]
         stream = agent.run(query, stream=True)
 
@@ -354,32 +363,9 @@ async def run_agent_stream(
                         or "unknown_tool"
                     )
 
-                    # ---- Extract image data from generate_image results ----
-                    if tool_name == "generate_image":
-                        result_text = (
-                            getattr(content, "output", None)
-                            or getattr(content, "text", None)
-                            or ""
-                        )
-                        try:
-                            img_result = (
-                                json.loads(result_text)
-                                if isinstance(result_text, str)
-                                else result_text
-                            )
-                            if isinstance(img_result, dict) and img_result.get(
-                                "image_base64"
-                            ):
-                                platform = img_result.get("platform", "unknown")
-                                b64 = img_result["image_base64"]
-                                stream_result.images[platform] = b64
-                                logger.info(
-                                    "Image extracted: platform=%s, b64_length=%d",
-                                    platform,
-                                    len(b64),
-                                )
-                        except (json.JSONDecodeError, TypeError):
-                            logger.warning("Failed to parse generate_image result")
+                    # Note: Image data is captured via ContextVar side-channel
+                    # in tools.py, so we don't need to extract it from
+                    # function_result (which may be truncated by the SDK).
 
                     if call_id and call_id not in emitted_tool_ends:
                         emitted_tool_ends.add(call_id)
@@ -605,8 +591,13 @@ async def run_agent_stream(
             yield (f"{REASONING_START}{accumulated_reasoning}{REASONING_END}")
 
         # ---- Emit extracted image data as special markers ----
-        if stream_result.images:
-            for platform, b64 in stream_result.images.items():
+        # Primary: images stored via ContextVar side-channel in tools.py
+        pending_images = pop_pending_images()
+        # Merge with any images from function_result extraction (fallback)
+        all_images = {**stream_result.images, **pending_images}
+
+        if all_images:
+            for platform, b64 in all_images.items():
                 image_event = json.dumps(
                     {"platform": platform, "image_base64": b64},
                     ensure_ascii=False,
@@ -614,8 +605,8 @@ async def run_agent_stream(
                 yield f"{IMAGE_DATA_START}{image_event}{IMAGE_DATA_END}"
             logger.info(
                 "Emitted %d image(s): %s",
-                len(stream_result.images),
-                list(stream_result.images.keys()),
+                len(all_images),
+                list(all_images.keys()),
             )
 
         # ---- Finalize OTel pipeline span ----
