@@ -25,7 +25,7 @@ _credential = DefaultAzureCredential()
 
 # ---------------------------------------------------------------------------
 # Monkey-patch: add type="message" to each message item for Responses API
-# The Azure AI Foundry Responses API requires each input item to have
+# The Microsoft Foundry Responses API requires each input item to have
 # an explicit "type" field (e.g., "message"), but the current
 # agent-framework-core SDK does not include it.
 # ---------------------------------------------------------------------------

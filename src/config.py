@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 _env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(_env_path)
 
-# Azure AI Foundry
+# Microsoft Foundry
 PROJECT_ENDPOINT: str = os.getenv("PROJECT_ENDPOINT", "")
 MODEL_DEPLOYMENT_NAME: str = os.getenv("MODEL_DEPLOYMENT_NAME", "gpt-5.2")
 IMAGE_DEPLOYMENT_NAME: str = os.getenv("IMAGE_DEPLOYMENT_NAME", "gpt-image-1.5")

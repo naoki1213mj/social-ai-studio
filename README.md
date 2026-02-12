@@ -215,7 +215,7 @@ Toggle A/B mode in AI Settings to generate **two content variants with different
 | Layer | Technology |
 |-------|-----------|
 | **Models** | gpt-5.2 (reasoning), gpt-image-1.5 (image generation) |
-| **Platform** | Microsoft Foundry (Azure AI Foundry) |
+| **Platform** | Microsoft Foundry |
 | **Agent SDK** | agent-framework-core (Responses API + `@tool` decorator) |
 | **Grounding** | File Search (Vector Store), Web Search (Bing), MCP (Microsoft Learn), Foundry IQ (Agentic Retrieval) |
 | **Observability** | OpenTelemetry → Azure Application Insights → Foundry Tracing |
@@ -236,15 +236,15 @@ Toggle A/B mode in AI Settings to generate **two content variants with different
 - Python 3.12+ with [uv](https://docs.astral.sh/uv/)
 - Node.js 20+
 - Azure CLI logged in (`az login`)
-- Access to an Azure AI Foundry project with gpt-5.2 and gpt-image-1.5 deployments
+- Access to a Microsoft Foundry project with gpt-5.2 and gpt-image-1.5 deployments
 - Bing Grounding connection configured in the Foundry project
 
 ### Setup
 
 ```bash
 # Clone
-git clone https://github.com/naoki1213mj/TechPulseSocial.git
-cd TechPulseSocial
+git clone https://github.com/naoki1213mj/social-ai-studio.git
+cd social-ai-studio
 
 # Environment variables
 cp .env.example .env
@@ -278,7 +278,7 @@ This builds a multi-stage Docker image (Node.js frontend → Python backend) and
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `PROJECT_ENDPOINT` | Azure AI Foundry project endpoint | **Yes** |
+| `PROJECT_ENDPOINT` | Microsoft Foundry project endpoint | **Yes** |
 | `MODEL_DEPLOYMENT_NAME` | Reasoning model deployment | **Yes** |
 | `IMAGE_DEPLOYMENT_NAME` | Image model deployment | **Yes** |
 | `VECTOR_STORE_ID` | Auto-generated on first run | No |

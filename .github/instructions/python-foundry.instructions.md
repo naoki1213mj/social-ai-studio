@@ -1,5 +1,5 @@
 ---
-description: 'Python + Azure AI Foundry SDK development guidelines for this hackathon project'
+description: 'Python + Microsoft Foundry SDK development guidelines for this hackathon project'
 applyTo: '**/*.py'
 ---
 

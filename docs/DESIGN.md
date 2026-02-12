@@ -462,7 +462,7 @@ azd up
 
 - `azure.yaml` で `host: containerapp` を定義
 - `infra/main.bicep` で ACR + Log Analytics + Container Apps Environment + Container App を一括プロビジョニング
-- SystemAssigned マネージド ID で Azure AI Foundry に認証
+- SystemAssigned マネージド ID で Microsoft Foundry に認証
 - Application Insights への接続文字列は環境変数で設定
 
 ## 15. 依存パッケージ

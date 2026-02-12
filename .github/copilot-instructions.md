@@ -20,7 +20,7 @@ The system features:
 Future roadmap includes multi-agent pipeline (Ideation → Creator → Reviewer).
 
 - **Deadline**: Feb 13, 2026 at 11:59 PM PT
-- **Platform**: Microsoft Foundry (Azure AI Foundry)
+- **Platform**: Microsoft Foundry
 - **Models**: gpt-5.2 (reasoning), gpt-image-1.5 (image generation)
 - **SDK**: agent-framework-core (Responses API + @tool decorator)
 - **Authentication**: DefaultAzureCredential (Azure CLI login)

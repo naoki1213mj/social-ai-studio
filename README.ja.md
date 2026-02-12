@@ -215,7 +215,7 @@ AI 設定で A/B モードをオンにすると**異なる戦略の 2 つのコ�
 | レイヤー | テクノロジー |
 | -------- | ------------ |
 | **モデル** | gpt-5.2（推論）、gpt-image-1.5（画像生成） |
-| **プラットフォーム** | Microsoft Foundry（Azure AI Foundry） |
+| **プラットフォーム** | Microsoft Foundry |
 | **エージェント SDK** | agent-framework-core（Responses API + `@tool` デコレータ） |
 | **グラウンディング** | File Search（Vector Store）、Web Search（Bing）、MCP（Microsoft Learn）、Foundry IQ（Agentic Retrieval） |
 | **オブザーバビリティ** | OpenTelemetry → Azure Application Insights → Foundry Tracing |
@@ -236,15 +236,15 @@ AI 設定で A/B モードをオンにすると**異なる戦略の 2 つのコ�
 - Python 3.12+ と [uv](https://docs.astral.sh/uv/)
 - Node.js 20+
 - Azure CLI ログイン済み（`az login`）
-- gpt-5.2 および gpt-image-1.5 デプロイメントがある Azure AI Foundry プロジェクト
+- gpt-5.2 および gpt-image-1.5 デプロイメントがある Microsoft Foundry プロジェクト
 - Foundry プロジェクトに Bing Grounding 接続を構成済み
 
 ### セットアップ
 
 ```bash
 # クローン
-git clone https://github.com/naoki1213mj/TechPulseSocial.git
-cd TechPulseSocial
+git clone https://github.com/naoki1213mj/social-ai-studio.git
+cd social-ai-studio
 
 # 環境変数
 cp .env.example .env
@@ -278,7 +278,7 @@ azd up
 
 | 変数名 | 説明 | 必須 |
 | ------ | ---- | ---- |
-| `PROJECT_ENDPOINT` | Azure AI Foundry プロジェクトエンドポイント | **はい** |
+| `PROJECT_ENDPOINT` | Microsoft Foundry プロジェクトエンドポイント | **はい** |
 | `MODEL_DEPLOYMENT_NAME` | 推論モデルデプロイメント | **はい** |
 | `IMAGE_DEPLOYMENT_NAME` | 画像モデルデプロイメント | **はい** |
 | `VECTOR_STORE_ID` | 初回実行時に自動生成 | いいえ |
