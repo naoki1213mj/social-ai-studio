@@ -317,6 +317,10 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full Azure architecture
 ## 📁 Project Structure
 
 ```text
+├── .github/
+│   ├── copilot-instructions.md  # Copilot custom instructions
+│   ├── instructions/            # Security & Python-Foundry rules
+│   └── workflows/               # GitHub Actions (CI / Deploy / Security)
 ├── src/
 │   ├── config.py            # Environment configuration
 │   ├── client.py            # AzureOpenAIResponsesClient singleton
@@ -356,6 +360,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full Azure architecture
 ├── data/
 │   └── brand_guidelines.md   # Sample brand guide (uploaded to Vector Store)
 ├── docs/
+│   ├── ARCHITECTURE.md      # Azure architecture documentation
 │   ├── DESIGN.md             # Architecture design document
 │   └── SPEC.md               # Technical specification
 ├── Dockerfile                # Multi-stage build (Node frontend + Python backend)

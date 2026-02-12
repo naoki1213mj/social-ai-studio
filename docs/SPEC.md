@@ -98,6 +98,8 @@ OpenTelemetry 分散トレーシング、Foundry Evaluation による品質メ�
 | **マルチターン** | Thread ID + Conversation ID 保持でリファイン対話対応 |
 | **停止/リトライ** | Stop ボタンで SSE 中断、Retry ボタンで再生成 |
 | **テスト** | 120 ユニットテスト (pytest + pytest-asyncio) |
+| **CI/CD** | GitHub Actions: CI (Ruff + pytest + tsc) → Deploy (ACR + Container App + Health Check) |
+| **セキュリティ** | Trivy 脆弱性スキャン + Gitleaks シークレット検出 + 依存関係監査 |
 | **デプロイ** | azd up → Azure Container Apps (Docker マルチステージ) |
 
 ## 5. フロントエンド機能要件
@@ -153,6 +155,7 @@ OpenTelemetry 分散トレーシング、Foundry Evaluation による品質メ�
 | **データベース** | Azure Cosmos DB (InMemory フォールバック) |
 | **認証** | DefaultAzureCredential (Azure CLI / Managed Identity) |
 | **デプロイ** | Azure Container Apps via azd (Docker マルチステージ) |
+| **CI/CD** | GitHub Actions (CI + Deploy + Security Scan) |
 | **パッケージ管理** | uv (Python) / npm (Node.js) |
 | **テスト** | pytest + pytest-asyncio (120 tests) |
 

@@ -31,7 +31,10 @@ Future roadmap includes multi-agent pipeline (Ideation → Creator → Reviewer)
 
 ```
 .
-├── .github/              # Copilot instructions & custom rules
+├── .github/              # Copilot instructions, custom rules & CI/CD workflows
+│   ├── copilot-instructions.md
+│   ├── instructions/     # Security & Python-Foundry rules
+│   └── workflows/        # GitHub Actions (ci.yml, deploy.yml, security.yml)
 ├── src/
 │   ├── config.py         # Configuration loader (env vars)
 │   ├── client.py         # AzureOpenAIResponsesClient singleton + monkey-patch
@@ -57,6 +60,13 @@ Future roadmap includes multi-agent pipeline (Ideation → Creator → Reviewer)
 │   └── vite.config.ts
 ├── data/                 # Grounding data
 │   └── brand_guidelines.md
+├── docs/                 # Documentation
+│   ├── ARCHITECTURE.md   # Azure architecture (resources, Mermaid diagrams)
+│   ├── DESIGN.md         # Architecture design document
+│   └── SPEC.md           # Technical specification
+├── infra/                # Bicep IaC (ACR + Container Apps)
+│   ├── main.bicep
+│   └── main.parameters.json
 ├── .env                  # Environment variables (gitignored)
 ├── .env.example          # Example config with placeholders
 ├── pyproject.toml        # Python project config (uv)
@@ -98,9 +108,10 @@ Future roadmap includes multi-agent pipeline (Ideation → Creator → Reviewer)
 
 ### Image Generation
 
-- Use `openai.AzureOpenAI` client's `images.generate()` for gpt-image-1.5
+- Use `openai.OpenAI` client's `responses.create()` with `tools=[{"type": "image_generation"}]` for gpt-image-1.5
+- Client initialized with `RESPONSES_API_BASE_URL` as `base_url` and `DefaultAzureCredential` token
 - Custom `@tool` named `generate_image` with parameters: `prompt`, `platform`, `style`
-- Returns base64 image data that the frontend displays in content cards
+- Returns metadata JSON (image data stored via `ContextVar` side-channel, NOT returned to LLM context)
 - Deployment name: `gpt-image-1.5`
 
 ### Reasoning Patterns
@@ -115,9 +126,9 @@ The single agent autonomously progresses through all phases.
 
 ### Agent Design (Single Agent + Multi-Tool)
 
-- **Architecture**: One agent with 5+ tools
+- **Architecture**: One agent with 7 tools
 - Hosted tools: `web_search` (Bing Grounding), `file_search` (Vector Store), `mcp` (Microsoft Learn Docs)
-- Custom tools: `generate_content`, `review_content`, `generate_image`
+- Custom tools: `generate_content`, `review_content`, `generate_image`, `search_knowledge_base`
 - All custom tools use `@tool(approval_mode="never_require")` decorator with `Annotated` parameters
 - Agent created via `AzureOpenAIResponsesClient.as_agent()` — Responses API v1
 - The LLM decides which tools to use and in what order based on context
@@ -157,6 +168,14 @@ The single agent autonomously progresses through all phases.
 - 📝 Markdown rendering (react-markdown)
 - ✨ Glassmorphism UI (frosted glass cards, backdrop blur, gradient backgrounds)
 - 🎨 Gradient design system (submit button, header, animated borders)
+
+### CI/CD Pipeline (GitHub Actions)
+
+- **CI** (`ci.yml`): Ruff lint + pytest (120 tests) + Frontend tsc + build — triggered on push/PR to main
+- **Deploy** (`deploy.yml`): CI gate → ACR build (commit SHA + latest tags) → Container App update → health check — triggered on push to main
+- **Security** (`security.yml`): Trivy filesystem scan → Gitleaks secret detection → npm audit + pip-audit — triggered on push/PR/weekly
+- Deploy uses **OIDC Workload Identity Federation** via `azure/login@v2` with GitHub Variables (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`)
+- Ruff config: `target-version = "py312"`, `line-length = 120`, `select = ["E", "F", "I", "W"]`, `ignore = ["E501", "E402"]`
 
 ## Coding Standards
 

@@ -348,10 +348,11 @@ scores = await evaluate_content(
 ## 11. 画像生成
 
 - `src/tools.py` の `generate_image` カスタムツール
-- gpt-image-1.5 デプロイメントを使用
+- **Responses API** の `image_generation` ツールタイプを使用（`client.responses.create()` + `tools=[{"type": "image_generation"}]`）
+- `openai.OpenAI` クライアントを `RESPONSES_API_BASE_URL` で初期化、`DefaultAzureCredential` でトークン取得
 - パラメータ: `prompt`, `platform`, `style`
-- プラットフォーム別サイズ: LinkedIn (1024x1024), X (1024x576), Instagram (1080x1080)
-- base64 エンコードで SSE 経由フロントエンドに配信
+- プラットフォーム別サイズ: LinkedIn (1024x1024), X (1024x1024), Instagram (1024x1024)
+- base64 エンコードで `ContextVar` サイドチャネル経由でフロントエンドに配信（LLM コンテキストには返さない）
 - フロントエンドの ContentCards で `data:image/png;base64,...` として表示
 
 ## 12. ディレクトリ構造
@@ -360,9 +361,13 @@ scores = await evaluate_content(
 hackfest-techconnect2026/
 ├── .github/
 │   ├── copilot-instructions.md
-│   └── instructions/
-│       ├── python-foundry.instructions.md
-│       └── security.instructions.md
+│   ├── instructions/
+│   │   ├── python-foundry.instructions.md
+│   │   └── security.instructions.md
+│   └── workflows/
+│       ├── ci.yml               # CI: Ruff lint + pytest + フロント tsc & build
+│       ├── deploy.yml           # Deploy: ACR ビルド → Container App 更新
+│       └── security.yml         # Security: Trivy + Gitleaks + 依存監査
 ├── src/
 │   ├── __init__.py
 │   ├── config.py              # 環境設定 (dotenv)
@@ -407,6 +412,7 @@ hackfest-techconnect2026/
 ├── data/
 │   └── brand_guidelines.md    # ブランドガイドライン (Vector Store にアップロード)
 ├── docs/
+│   ├── ARCHITECTURE.md    # Azure アーキテクチャ（リソース一覧・Mermaid 図）
 │   ├── DESIGN.md              # 本ドキュメント
 │   └── SPEC.md                # エージェント仕様書
 ├── Dockerfile                 # マルチステージビルド (Node frontend + Python backend)
@@ -442,7 +448,46 @@ hackfest-techconnect2026/
 - **Card Animations**: staggered fade-in (`animationDelay` で順次表示)
 - **Dark / Light Mode**: `dark:` Tailwind クラスで全コンポーネント対応
 
-## 14. Azure デプロイメント
+## 14. CI/CD パイプライン（GitHub Actions）
+
+### ワークフロー一覧
+
+| ワークフロー | ファイル | トリガー | ジョブ |
+|---|---|---|---|
+| **CI** | `ci.yml` | push / PR to main | Ruff lint → pytest (120 tests) → Frontend tsc + build |
+| **Deploy** | `deploy.yml` | push to main (CI 通過後) | ACR ビルド → Container App 更新 → ヘルスチェック |
+| **Security** | `security.yml` | push / PR / 毎週月曜 | Trivy スキャン → Gitleaks → 依存関係監査 |
+
+### パイプラインフロー
+
+```
+git push (main)
+    │
+    ├──→ ci.yml
+    │     ├── 🔍 Ruff lint (check + format)
+    │     ├── 🧪 pytest (120 tests)
+    │     └── 🎨 Frontend tsc --noEmit + build
+    │
+    ├──→ deploy.yml (ci.yml 通過後)
+    │     ├── 🔐 Azure Login (OIDC)
+    │     ├── 🐳 az acr build (SHA + latest タグ)
+    │     ├── 🚀 az containerapp update
+    │     └── ✅ Health check (/api/health, 5 回リトライ)
+    │
+    └──→ security.yml
+          ├── 🛡️ Trivy (filesystem scan → SARIF)
+          ├── 🔐 Gitleaks (secret detection)
+          └── 📦 npm audit + pip-audit
+```
+
+### 認証（OIDC Workload Identity Federation）
+
+- Azure AD App Registration + サービスプリンシパル
+- Federated Credential: `repo:naoki1213mj/social-ai-studio:ref:refs/heads/main` + `environment:production`
+- ロール: `AcrPush` (ACR) + `Contributor` (Container App)
+- GitHub Variables: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`
+
+## 15. Azure デプロイメント
 
 ### Docker マルチステージビルド
 
@@ -465,7 +510,7 @@ azd up
 - SystemAssigned マネージド ID で Microsoft Foundry に認証
 - Application Insights への接続文字列は環境変数で設定
 
-## 15. 依存パッケージ
+## 16. 依存パッケージ
 
 ### Python (Backend)
 

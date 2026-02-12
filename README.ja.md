@@ -4,6 +4,9 @@
 ![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript)
 ![Tests](https://img.shields.io/badge/tests-120%20passed-brightgreen)
+![CI](https://github.com/naoki1213mj/social-ai-studio/actions/workflows/ci.yml/badge.svg)
+![Deploy](https://github.com/naoki1213mj/social-ai-studio/actions/workflows/deploy.yml/badge.svg)
+![Security](https://github.com/naoki1213mj/social-ai-studio/actions/workflows/security.yml/badge.svg)
 ![Azure](https://img.shields.io/badge/Azure-Foundry-0078d4?logo=microsoftazure)
 ![License](https://img.shields.io/badge/license-Hackathon-orange)
 
@@ -37,6 +40,8 @@ _近日公開 — 推論パイプラインの全体ウォークスルー（3分�
 | 🌙 **ダーク / ライトモード** | システム設定連動テーマ切替 |
 | ✨ **グラスモーフィズム UI** | フロストガラス、グラデーション、アニメーションツールピル |
 | 🚀 **ワンコマンドデプロイ** | `azd up` → Azure Container Apps |
+| ⚙️ **CI/CD パイプライン** | GitHub Actions: Lint → Test → Build → Deploy → Health Check |
+| 🛡️ **セキュリティスキャン** | Trivy 脆弱性スキャン + Gitleaks シークレット検出 + 依存関係監査 |
 | ✅ **120 ユニットテスト** | 包括的なバックエンドテストスイート |
 
 ## 🏗️ アーキテクチャ
@@ -226,6 +231,7 @@ AI 設定で A/B モードをオンにすると**異なる戦略の 2 つのコ�
 | **フロントエンド** | React 19 + TypeScript 5 + Vite 7 + Tailwind CSS v3 |
 | **UI コンポーネント** | lucide-react アイコン、react-markdown、recharts（レーダーチャート） |
 | **デプロイ** | Azure Container Apps via azd（マルチステージ Docker ビルド） |
+| **CI/CD** | GitHub Actions（CI + Deploy + Security Scan） |
 | **パッケージマネージャ** | uv（Python）、npm（Node.js） |
 | **テスト** | pytest + pytest-asyncio（120 テスト） |
 
@@ -273,6 +279,22 @@ azd up
 ```
 
 マルチステージ Docker イメージ（Node.js フロントエンド → Python バックエンド）をビルドし、マネージド ID 付きで Azure Container Apps にデプロイします。
+
+### CI/CD パイプライン（GitHub Actions）
+
+`main` ブランチへの push で完全なパイプラインが自動実行されます：
+
+```
+git push → Lint (Ruff) → Test (120 pytest) → Build (ACR) → Deploy (Container Apps) → Health Check
+```
+
+| ワークフロー | トリガー | 説明 |
+| ------------ | -------- | ---- |
+| **CI** (`ci.yml`) | push / PR | Ruff lint + pytest + TypeScript 型チェック |
+| **Deploy** (`deploy.yml`) | main への push | Docker ビルド → ACR → Container App 更新 |
+| **Security** (`security.yml`) | push / PR / 毎週 | Trivy + Gitleaks + 依存関係監査 |
+
+詳細は [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) を参照してください。
 
 ### 環境変数
 
@@ -334,7 +356,12 @@ azd up
 │   └── main.parameters.json
 ├── data/
 │   └── brand_guidelines.md   # サンプルブランドガイド（Vector Store にアップロード）
+├── .github/
+│   ├── copilot-instructions.md  # Copilot カスタムインストラクション
+│   ├── instructions/            # セキュリティ・Python ルール
+│   └── workflows/               # GitHub Actions（CI / Deploy / Security）
 ├── docs/
+│   ├── ARCHITECTURE.md      # Azure アーキテクチャドキュメント
 │   ├── DESIGN.md             # アーキテクチャ設計ドキュメント
 │   └── SPEC.md               # 技術仕様書
 ├── Dockerfile                # マルチステージビルド（Node フロントエンド + Python バックエンド）
@@ -440,7 +467,7 @@ SSE ストリームを返します：
 | **推論 & マルチステップ思考** | 25% | 3 フェーズパイプライン（CoT → ReAct → Self-Reflection）、ライブフェーズバッジ、制御可能な深さ（low/medium/high）、OpenTelemetry による推論パイプラインのトレーシング（ツール別スパン） |
 | **創造性 & 独自性** | 20% | HITL ワークフロー（承認/編集/改善）、A/B コンテンツ比較（戦略バリアント）、推論フェーズ可視化、GPT 画像生成、MCP Server 統合、デュアル評価システム（自己レビュー + Foundry メトリクス） |
 | **ユーザー体験 & プレゼン** | 15% | フロストガラス UI + アニメーション、ダーク/ライトモード、5 言語 i18n、スケルトンローディング、おすすめ質問、キーボードショートカット、会話履歴、コンテンツエクスポート（Markdown + JSON） |
-| **技術実装** | 15% | agent-framework-core SDK、OTel 分散トレーシング付き SSE ストリーミング、Cosmos DB 永続化、azd 経由 Azure Container Apps デプロイ、120 ユニットテスト、OpenTelemetry → Application Insights パイプライン、Foundry Evaluation SDK 統合 |
+| **技術実装** | 15% | agent-framework-core SDK、OTel 分散トレーシング付き SSE ストリーミング、Cosmos DB 永続化、azd 経由 Azure Container Apps デプロイ、GitHub Actions CI/CD（lint → test → build → deploy → security scan）、120 ユニットテスト、OpenTelemetry → Application Insights パイプライン、Foundry Evaluation SDK 統合 |
 
 ## 🧪 テスト
 
