@@ -1,0 +1,365 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-700 rounded-full;
+}
+
+/* ============================================
+   Reasoning Indicator (matching reference repo)
+   ============================================ */
+.reasoning-indicator {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.reasoning-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  cursor: pointer;
+  font-size: 12px;
+  width: fit-content;
+  max-width: 100%;
+  text-align: left;
+  transition: all 0.15s ease;
+  border-radius: 6px;
+  @apply text-gray-600 dark:text-gray-300;
+}
+
+.reasoning-header:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.reasoning-toggle-icon {
+  display: flex;
+  align-items: center;
+  color: #6366f1;
+}
+
+.reasoning-summary-text {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.reasoning-spinner {
+  font-size: 11px;
+  color: #6366f1;
+  animation: pulse 1.5s infinite;
+}
+
+.reasoning-preview {
+  font-size: 11px;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  @apply text-gray-400 dark:text-gray-500;
+}
+
+.reasoning-content {
+  background: rgba(99, 102, 241, 0.03);
+  border: 1px solid rgba(99, 102, 241, 0.1);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  padding: 12px;
+  margin-top: -1px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.reasoning-text {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  @apply text-gray-600 dark:text-gray-300;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Dark mode overrides */
+.dark .reasoning-header {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+}
+.dark .reasoning-header:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+}
+.dark .reasoning-content {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+/* ============================================
+   Tool Status Indicator (matching reference repo)
+   ============================================ */
+.tool-status-container {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.tool-status-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  cursor: pointer;
+  font-size: 12px;
+  width: fit-content;
+  max-width: 100%;
+  text-align: left;
+  transition: all 0.15s ease;
+  border-radius: 6px;
+  @apply text-gray-600 dark:text-gray-300;
+}
+
+.tool-status-header:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.tool-toggle-icon {
+  display: flex;
+  align-items: center;
+  color: #10b981;
+}
+
+.tool-summary-text {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tool-spinner {
+  font-size: 11px;
+  animation: pulse 1.5s infinite;
+}
+
+.tool-status-list {
+  background: rgba(16, 185, 129, 0.03);
+  border: 1px solid rgba(16, 185, 129, 0.1);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  padding: 8px 12px;
+  margin-top: -1px;
+}
+
+.tool-category-group {
+  margin-bottom: 6px;
+}
+
+.tool-category-group:last-child {
+  margin-bottom: 0;
+}
+
+.tool-category-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+  @apply text-gray-400 dark:text-gray-500;
+}
+
+.tool-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  margin-bottom: 2px;
+  @apply text-gray-700 dark:text-gray-300;
+}
+
+.tool-item:hover {
+  @apply bg-gray-50 dark:bg-gray-800/50;
+}
+
+.tool-item-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.tool-item-name {
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.tool-item-status {
+  font-size: 11px;
+}
+
+.tool-item-status.status-completed {
+  color: #10b981;
+}
+
+.tool-item-status.status-running {
+  color: #6366f1;
+  animation: pulse 1.5s infinite;
+}
+
+.tool-item-status.status-error {
+  color: #ef4444;
+}
+
+.tool-item-message {
+  font-size: 11px;
+  @apply text-gray-400 dark:text-gray-500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dark .tool-status-header {
+  background: rgba(16, 185, 129, 0.1);
+}
+.dark .tool-status-list {
+  background: rgba(16, 185, 129, 0.06);
+  border-color: rgba(16, 185, 129, 0.15);
+}
+
+/* ============================================
+   Processing Footer
+   ============================================ */
+.processing-footer {
+  @apply border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50;
+  flex-shrink: 0;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================
+   Prose styling for markdown
+   ============================================ */
+.prose pre {
+  @apply bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto;
+}
+.prose code {
+  @apply bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm;
+}
+.prose pre code {
+  @apply bg-transparent p-0;
+}
+.prose a {
+  @apply text-blue-600 dark:text-blue-400 underline;
+}
+.prose ul {
+  @apply list-disc pl-6;
+}
+.prose ol {
+  @apply list-decimal pl-6;
+}
+.prose blockquote {
+  @apply border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic;
+}
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  @apply font-bold mt-4 mb-2;
+}
+.prose h1 { @apply text-2xl; }
+.prose h2 { @apply text-xl; }
+.prose h3 { @apply text-lg; }
+.prose p { @apply mb-3 leading-relaxed; }
+
+/* ============================================
+   Content Card Animations
+   ============================================ */
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.card-fade-in {
+  animation: cardFadeIn 0.4s ease-out both;
+}
+
+.card-fade-in:nth-child(1) { animation-delay: 0ms; }
+.card-fade-in:nth-child(2) { animation-delay: 120ms; }
+.card-fade-in:nth-child(3) { animation-delay: 240ms; }
+
+/* Skeleton loading shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    theme('colors.gray.200') 25%,
+    theme('colors.gray.100') 50%,
+    theme('colors.gray.200') 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+.dark .skeleton {
+  background: linear-gradient(
+    90deg,
+    theme('colors.gray.800') 25%,
+    theme('colors.gray.700') 50%,
+    theme('colors.gray.800') 75%
+  );
+  background-size: 200% 100%;
+}
+
+/* Approved stamp animation */
+@keyframes stampIn {
+  0% { transform: scale(0.5) rotate(-12deg); opacity: 0; }
+  60% { transform: scale(1.1) rotate(2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+.stamp-in {
+  animation: stampIn 0.3s ease-out;
+}
+
+/* Smooth button hover transitions */
+.btn-hover {
+  transition: all 0.15s ease-out;
+}
+.btn-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.dark .btn-hover:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}

@@ -1,0 +1,418 @@
+import { Check, CheckCircle2, Copy, Download, Edit3, Linkedin, MessageCircle, RefreshCw, Send, Twitter, X } from "lucide-react";
+import { useState } from "react";
+
+/** Structured content from the agent's JSON output */
+export interface PlatformContent {
+  platform: string;
+  body: string;
+  hashtags: string[];
+  call_to_action: string;
+  posting_time: string;
+  image_prompt?: string;
+  image_base64?: string;
+}
+
+export interface ContentReview {
+  overall_score: number;
+  scores: {
+    brand_alignment: number;
+    audience_relevance: number;
+    engagement_potential: number;
+    clarity: number;
+    platform_optimization: number;
+  };
+  feedback: string[];
+  improvements_made: string[];
+}
+
+export interface StructuredOutput {
+  contents: PlatformContent[];
+  review: ContentReview;
+  sources_used: string[];
+}
+
+interface ContentCardsProps {
+  data: StructuredOutput;
+  t: (key: string) => string;
+  onRefine?: (platform: string, feedback: string) => void;
+}
+
+/** Platform metadata for display */
+const PLATFORM_META: Record<
+  string,
+  { icon: React.ReactNode; color: string; bgColor: string; borderColor: string; label: string }
+> = {
+  linkedin: {
+    icon: <Linkedin className="w-5 h-5" />,
+    color: "text-blue-700 dark:text-blue-400",
+    bgColor: "bg-blue-50 dark:bg-blue-950/30",
+    borderColor: "border-blue-200 dark:border-blue-800",
+    label: "LinkedIn",
+  },
+  x: {
+    icon: <Twitter className="w-5 h-5" />,
+    color: "text-gray-900 dark:text-gray-100",
+    bgColor: "bg-gray-50 dark:bg-gray-900/50",
+    borderColor: "border-gray-200 dark:border-gray-700",
+    label: "X (Twitter)",
+  },
+  instagram: {
+    icon: <MessageCircle className="w-5 h-5" />,
+    color: "text-pink-600 dark:text-pink-400",
+    bgColor: "bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30",
+    borderColor: "border-pink-200 dark:border-pink-800",
+    label: "Instagram",
+  },
+};
+
+function ScoreBar({ score, label }: { score: number; label: string }) {
+  const pct = (score / 10) * 100;
+  const color =
+    score >= 8 ? "bg-green-500" : score >= 6 ? "bg-yellow-500" : "bg-red-500";
+
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <span className="w-32 text-gray-500 dark:text-gray-400 truncate">{label}</span>
+      <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-6 text-right font-medium">{score}</span>
+    </div>
+  );
+}
+
+function PlatformCard({ item, t, onRefine }: { item: PlatformContent; t: (key: string) => string; onRefine?: (platform: string, feedback: string) => void }) {
+  const [copied, setCopied] = useState(false);
+  const [approved, setApproved] = useState(false);
+  const [showRefine, setShowRefine] = useState(false);
+  const [feedback, setFeedback] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [editedBody, setEditedBody] = useState(item.body);
+  const meta = PLATFORM_META[item.platform] ?? PLATFORM_META.linkedin;
+
+  const handleCopy = async () => {
+    const text = `${editing ? editedBody : item.body}\n\n${item.hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
+  const handleRefineSubmit = () => {
+    if (feedback.trim() && onRefine) {
+      onRefine(item.platform, feedback.trim());
+      setFeedback("");
+      setShowRefine(false);
+    }
+  };
+
+  return (
+    <div className={`border rounded-xl overflow-hidden card-fade-in ${meta.borderColor}`}>
+      {/* Card header */}
+      <div className={`flex items-center justify-between px-4 py-2.5 ${meta.bgColor}`}>
+        <div className={`flex items-center gap-2 ${meta.color}`}>
+          {meta.icon}
+          <span className="font-semibold text-sm">{meta.label}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {item.posting_time && (
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              🕐 {item.posting_time}
+            </span>
+          )}
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-800 transition-colors"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-green-500" />
+                <span className="text-green-600 dark:text-green-400">{t("content.copied")}</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5" />
+                <span>{t("content.copy")}</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Image (if generated) */}
+      {item.image_base64 && (
+        <div className="px-4 pt-3">
+          <img
+            src={`data:image/png;base64,${item.image_base64}`}
+            alt={`${item.platform} visual`}
+            className="w-full rounded-lg object-cover max-h-64"
+          />
+        </div>
+      )}
+
+      {/* Content body */}
+      <div className="px-4 py-3">
+        {editing ? (
+          <div className="space-y-2">
+            <textarea
+              value={editedBody}
+              onChange={(e) => setEditedBody(e.target.value)}
+              rows={6}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm outline-none resize-y focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => { setEditing(false); setEditedBody(item.body); }}
+                className="px-2.5 py-1 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              >
+                <X className="w-3 h-3 inline mr-1" />{t("hitl.cancel")}
+              </button>
+              <button
+                onClick={() => setEditing(false)}
+                className="px-2.5 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                <Check className="w-3 h-3 inline mr-1" />{t("hitl.save")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-800 dark:text-gray-200">
+            {editedBody}
+          </p>
+        )}
+      </div>
+
+      {/* Hashtags */}
+      {item.hashtags.length > 0 && (
+        <div className="px-4 pb-2 flex flex-wrap gap-1.5">
+          {item.hashtags.map((tag, i) => (
+            <span
+              key={i}
+              className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-blue-600 dark:text-blue-400"
+            >
+              {tag.startsWith("#") ? tag : `#${tag}`}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* CTA */}
+      {item.call_to_action && (
+        <div className="px-4 pb-3 text-xs text-gray-500 dark:text-gray-400 italic">
+          CTA: {item.call_to_action}
+        </div>
+      )}
+
+      {/* Character count */}
+      <div className="px-4 pb-2 text-right">
+        <span className="text-xs text-gray-400 dark:text-gray-500">
+          {(editing ? editedBody : item.body).length.toLocaleString()} {t("content.chars")}
+        </span>
+      </div>
+
+      {/* HITL: Approve / Edit / Refine actions */}
+      <div className="px-4 pb-3 border-t border-gray-100 dark:border-gray-800 pt-2.5">
+        <div className="flex items-center gap-2">
+          {/* Approve button */}
+          <button
+            onClick={() => setApproved(!approved)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all btn-hover ${
+              approved
+                ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700 stamp-in"
+                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-green-50 dark:hover:bg-green-950/20 border border-transparent"
+            }`}
+          >
+            <CheckCircle2 className={`w-3.5 h-3.5 ${approved ? "fill-green-500 text-green-700 dark:text-green-400" : ""}`} />
+            {approved ? t("hitl.approved") : t("hitl.approve")}
+          </button>
+
+          {/* Edit button */}
+          {!editing && (
+            <button
+              onClick={() => setEditing(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              {t("hitl.edit")}
+            </button>
+          )}
+
+          {/* Refine with AI button */}
+          <button
+            onClick={() => setShowRefine(!showRefine)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              showRefine
+                ? "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 border border-violet-300 dark:border-violet-700"
+                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-violet-50 dark:hover:bg-violet-950/20 border border-transparent"
+            }`}
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            {t("hitl.refine")}
+          </button>
+        </div>
+
+        {/* Refine feedback input */}
+        {showRefine && (
+          <div className="mt-2.5 flex gap-2">
+            <input
+              type="text"
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleRefineSubmit(); }}
+              placeholder={t("hitl.refine.placeholder")}
+              className="flex-1 px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-xs outline-none focus:ring-2 focus:ring-violet-500"
+              autoFocus
+            />
+            <button
+              onClick={handleRefineSubmit}
+              disabled={!feedback.trim()}
+              className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 disabled:bg-gray-400 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
+            >
+              <Send className="w-3 h-3" />
+              {t("hitl.send")}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Trigger a file download in the browser */
+function downloadFile(filename: string, content: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/** Convert structured output to Markdown */
+function toMarkdown(data: StructuredOutput): string {
+  const lines: string[] = ["# TechPulse Social — Generated Content\n"];
+  const now = new Date().toLocaleString();
+  lines.push(`> Generated: ${now}\n`);
+
+  for (const item of data.contents) {
+    const meta = PLATFORM_META[item.platform];
+    lines.push(`## ${meta?.label ?? item.platform}\n`);
+    lines.push(item.body + "\n");
+    if (item.hashtags.length > 0) {
+      lines.push("**Hashtags:** " + item.hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ") + "\n");
+    }
+    if (item.call_to_action) lines.push(`**CTA:** ${item.call_to_action}\n`);
+    if (item.posting_time) lines.push(`**Posting Time:** ${item.posting_time}\n`);
+    lines.push("---\n");
+  }
+
+  if (data.review && data.review.overall_score > 0) {
+    lines.push("## Quality Review\n");
+    lines.push(`**Overall Score:** ${data.review.overall_score}/10\n`);
+    const s = data.review.scores;
+    lines.push(`| Metric | Score |`);
+    lines.push(`|--------|-------|`);
+    lines.push(`| Brand Alignment | ${s.brand_alignment}/10 |`);
+    lines.push(`| Audience Relevance | ${s.audience_relevance}/10 |`);
+    lines.push(`| Engagement Potential | ${s.engagement_potential}/10 |`);
+    lines.push(`| Clarity | ${s.clarity}/10 |`);
+    lines.push(`| Platform Optimization | ${s.platform_optimization}/10 |\n`);
+    if (data.review.feedback.length > 0) {
+      lines.push("**Feedback:**");
+      data.review.feedback.forEach((f) => lines.push(`- ${f}`));
+      lines.push("");
+    }
+  }
+
+  if (data.sources_used && data.sources_used.length > 0) {
+    lines.push("## Sources\n");
+    data.sources_used.forEach((s) => lines.push(`- ${s}`));
+  }
+
+  return lines.join("\n");
+}
+
+export default function ContentCards({ data, t, onRefine }: ContentCardsProps) {
+  const { contents, review, sources_used } = data;
+
+  const handleExportMarkdown = () => {
+    const md = toMarkdown(data);
+    downloadFile("techpulse-content.md", md, "text/markdown;charset=utf-8");
+  };
+
+  const handleExportJSON = () => {
+    const json = JSON.stringify(data, null, 2);
+    downloadFile("techpulse-content.json", json, "application/json;charset=utf-8");
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Platform cards */}
+      <div className="grid grid-cols-1 gap-4">
+        {contents.map((item, i) => (
+          <PlatformCard key={`${item.platform}-${i}`} item={item} t={t} onRefine={onRefine} />
+        ))}
+      </div>
+
+      {/* Quality Review */}
+      {review && review.overall_score > 0 && (
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2.5 bg-emerald-50 dark:bg-emerald-950/20 border-b border-emerald-100 dark:border-emerald-900">
+            <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+              {t("review.title")}
+            </span>
+            <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+              {review.overall_score}/10
+            </span>
+          </div>
+          <div className="px-4 py-3 space-y-2">
+            <ScoreBar score={review.scores.brand_alignment} label={t("review.brandAlignment")} />
+            <ScoreBar score={review.scores.audience_relevance} label={t("review.audienceRelevance")} />
+            <ScoreBar score={review.scores.engagement_potential} label={t("review.engagementPotential")} />
+            <ScoreBar score={review.scores.clarity} label={t("review.clarity")} />
+            <ScoreBar score={review.scores.platform_optimization} label={t("review.platformOptimization")} />
+          </div>
+          {review.feedback.length > 0 && (
+            <div className="px-4 pb-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{t("review.feedback")}</p>
+              <ul className="text-xs text-gray-600 dark:text-gray-300 space-y-0.5">
+                {review.feedback.map((f, i) => (
+                  <li key={i}>• {f}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Sources */}
+      {sources_used && sources_used.length > 0 && (
+        <div className="text-xs text-gray-400 dark:text-gray-500 px-1">
+          {t("content.sources")}: {sources_used.join(", ")}
+        </div>
+      )}
+
+      {/* Export bar */}
+      <div className="flex items-center justify-end gap-2 pt-1">
+        <button
+          onClick={handleExportMarkdown}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 border border-gray-200 dark:border-gray-700 transition-colors"
+        >
+          <Download className="w-3.5 h-3.5" />
+          {t("export.markdown")}
+        </button>
+        <button
+          onClick={handleExportJSON}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 border border-gray-200 dark:border-gray-700 transition-colors"
+        >
+          <Download className="w-3.5 h-3.5" />
+          {t("export.json")}
+        </button>
+      </div>
+    </div>
+  );
+}

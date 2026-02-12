@@ -1,0 +1,19 @@
+[project]
+name = "hackfest-techconnect2026"
+version = "0.1.0"
+description = "Reasoning Agents - Social Media Content Creation Agent for TechConnect 2026 Hackathon"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "agent-framework-core",
+    "azure-identity",
+    "openai>=2.20.0",
+    "python-dotenv",
+    "fastapi",
+    "uvicorn",
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+]
