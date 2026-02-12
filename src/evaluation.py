@@ -109,9 +109,7 @@ async def evaluate_content(
                 logger.warning("Groundedness evaluator failed: %s", e)
 
     except ImportError:
-        logger.warning(
-            "azure-ai-evaluation not installed — run: uv add azure-ai-evaluation"
-        )
+        logger.warning("azure-ai-evaluation not installed — run: uv add azure-ai-evaluation")
         results["error"] = "azure-ai-evaluation not installed"
     except Exception as e:
         logger.error("Evaluation failed: %s", e, exc_info=True)

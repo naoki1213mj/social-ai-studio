@@ -88,9 +88,7 @@ def save_conversation(
         try:
             # Try to preserve existing createdAt
             try:
-                existing = container.read_item(
-                    item=conversation_id, partition_key=user_id
-                )
+                existing = container.read_item(item=conversation_id, partition_key=user_id)
                 doc["createdAt"] = existing.get("createdAt", now)
             except Exception:
                 pass  # New document — use current time

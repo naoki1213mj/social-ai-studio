@@ -123,9 +123,7 @@ class TestRegexPatterns:
     """Test the regex patterns used for SSE parsing."""
 
     def test_tool_event_pattern(self):
-        text = (
-            '__TOOL_EVENT__{"tool":"web_search","status":"started"}__END_TOOL_EVENT__'
-        )
+        text = '__TOOL_EVENT__{"tool":"web_search","status":"started"}__END_TOOL_EVENT__'
         match = TOOL_EVENT_PATTERN.search(text)
         assert match is not None
         payload = json.loads(match.group(1))

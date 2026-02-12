@@ -1,0 +1,101 @@
+name: CI — Test & Lint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'frontend/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - 'Dockerfile'
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Python Lint ──────────────────────────────────
+  lint:
+    name: 🔍 Ruff Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Ruff check
+        run: uv run ruff check src/ tests/ --output-format=github
+
+      - name: Ruff format check
+        run: uv run ruff format --check src/ tests/
+
+  # ── Python Unit Tests ────────────────────────────
+  test:
+    name: 🧪 Python Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Run tests
+        run: uv run python -m pytest tests/ -q --tb=short --junitxml=test-results.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results.xml
+
+  # ── Frontend Lint ────────────────────────────────
+  frontend-lint:
+    name: 🎨 Frontend Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --force
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+      - name: Build check
+        run: npm run build

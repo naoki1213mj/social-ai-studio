@@ -119,9 +119,7 @@ def _build_query_with_context(
 
     # Add conversation history if available
     if history:
-        history_text = "\n".join(
-            f"{msg['role']}: {msg['content']}" for msg in history[-6:]
-        )
+        history_text = "\n".join(f"{msg['role']}: {msg['content']}" for msg in history[-6:])
         parts.append(f"Previous conversation:\n{history_text}\n")
 
     # Build the current request
@@ -184,10 +182,7 @@ async def run_agent_stream(
         tools.append(file_search_tool)
         logger.info("File search tool enabled (vector_store_id=%s)", vector_store_id)
     else:
-        logger.warning(
-            "VECTOR_STORE_ID not set — file_search tool disabled. "
-            "Run vector_store.py to create one."
-        )
+        logger.warning("VECTOR_STORE_ID not set — file_search tool disabled. Run vector_store.py to create one.")
 
     # Add MCP tool (Microsoft Learn documentation)
     if config.MCP_SERVER_URL:
@@ -243,9 +238,7 @@ async def run_agent_stream(
     )
 
     # Build the full query
-    query = _build_query_with_context(
-        message, platforms, content_type, language, history
-    )
+    query = _build_query_with_context(message, platforms, content_type, language, history)
     logger.info("Agent processing: %s... (platforms=%s)", message[:80], platforms)
 
     # ---- OpenTelemetry tracing ----
@@ -331,8 +324,7 @@ async def run_agent_stream(
                 if _is_retryable_error(run_exc) and attempt < MAX_RETRIES:
                     delay = RETRY_BASE_DELAY_S * (2**attempt)
                     logger.warning(
-                        "Retryable error on agent.run() attempt %d/%d: %s "
-                        "(retrying in %.1fs)",
+                        "Retryable error on agent.run() attempt %d/%d: %s (retrying in %.1fs)",
                         attempt + 1,
                         MAX_RETRIES + 1,
                         run_exc,
@@ -366,9 +358,7 @@ async def run_agent_stream(
 
                 if ct == "text_reasoning" and content.text:
                     # GPT-5 reasoning token — accumulate and throttle
-                    if accumulated_reasoning and content.text.startswith(
-                        accumulated_reasoning
-                    ):
+                    if accumulated_reasoning and content.text.startswith(accumulated_reasoning):
                         # SDK sent cumulative text — replace
                         accumulated_reasoning = content.text
                     elif accumulated_reasoning.endswith(content.text):
@@ -379,9 +369,7 @@ async def run_agent_stream(
                         accumulated_reasoning += content.text
 
                     if _should_send_reasoning():
-                        yield (
-                            f"{REASONING_START}{accumulated_reasoning}{REASONING_END}"
-                        )
+                        yield (f"{REASONING_START}{accumulated_reasoning}{REASONING_END}")
 
                 elif ct == "function_call":
                     # Tool being invoked — emit only once per call_id
@@ -404,11 +392,7 @@ async def run_agent_stream(
                     # Tool returned result — emit only once per call_id
                     call_id = getattr(content, "call_id", None) or ""
                     # Resolve name from call_id map (function_result often lacks .name)
-                    tool_name = (
-                        getattr(content, "name", None)
-                        or call_id_to_name.get(call_id)
-                        or "unknown_tool"
-                    )
+                    tool_name = getattr(content, "name", None) or call_id_to_name.get(call_id) or "unknown_tool"
 
                     # Note: Image data is captured via ContextVar side-channel
                     # in tools.py, so we don't need to extract it from
@@ -430,11 +414,7 @@ async def run_agent_stream(
                 ):
                     # Hosted tool exposed as a Content item (some SDK versions)
                     tool_name = _HOSTED_PATTERNS.get(ct, "unknown_tool")
-                    item_id = (
-                        getattr(content, "id", "")
-                        or getattr(content, "call_id", "")
-                        or tool_name
-                    )
+                    item_id = getattr(content, "id", "") or getattr(content, "call_id", "") or tool_name
                     ev = _emit_start(tool_name, item_id)
                     if ev:
                         yield ev
@@ -450,20 +430,14 @@ async def run_agent_stream(
                     annotations = getattr(content, "annotations", None) or []
                     for ann in annotations:
                         ann_type = getattr(ann, "type", "")
-                        if (
-                            "url_citation" in ann_type
-                            and "web_search" not in _detected_hosted
-                        ):
+                        if "url_citation" in ann_type and "web_search" not in _detected_hosted:
                             ev = _emit_start("web_search", "ws_annotation")
                             if ev:
                                 yield ev
                             ev = _emit_end("web_search", "ws_annotation")
                             if ev:
                                 yield ev
-                        elif (
-                            "file_citation" in ann_type
-                            and "file_search" not in _detected_hosted
-                        ):
+                        elif "file_citation" in ann_type and "file_search" not in _detected_hosted:
                             ev = _emit_start("file_search", "fs_annotation")
                             if ev:
                                 yield ev
@@ -489,8 +463,7 @@ async def run_agent_stream(
                                 if pattern in item_type:
                                     iid = getattr(out_item, "id", "") or tool_name
                                     logger.info(
-                                        "Hosted tool from Response.output: "
-                                        "type=%s → %s (id=%s)",
+                                        "Hosted tool from Response.output: type=%s → %s (id=%s)",
                                         item_type,
                                         tool_name,
                                         iid,
@@ -546,15 +519,10 @@ async def run_agent_stream(
 
                     # Extract item_id from the raw event
                     if isinstance(raw_event, dict):
-                        item_id = str(
-                            raw_event.get("item_id", "") or raw_event.get("id", "")
-                        )
+                        item_id = str(raw_event.get("item_id", "") or raw_event.get("id", ""))
                         item = raw_event.get("item")
                     else:
-                        item_id = str(
-                            getattr(raw_event, "item_id", "")
-                            or getattr(raw_event, "id", "")
-                        )
+                        item_id = str(getattr(raw_event, "item_id", "") or getattr(raw_event, "id", ""))
                         item = getattr(raw_event, "item", None)
 
                     # Try to get item_id from nested item object
@@ -581,9 +549,7 @@ async def run_agent_stream(
                 if "output_item" in raw_type:
                     if isinstance(raw_event, dict):
                         item = raw_event.get("item", {})
-                        item_type = (
-                            item.get("type", "") if isinstance(item, dict) else ""
-                        )
+                        item_type = item.get("type", "") if isinstance(item, dict) else ""
                     else:
                         item = getattr(raw_event, "item", None)
                         item_type = str(getattr(item, "type", "")) if item else ""
@@ -593,9 +559,7 @@ async def run_agent_stream(
                             if isinstance(item, dict):
                                 iid = str(item.get("id", "")) or tool_name
                             else:
-                                iid = (
-                                    str(getattr(item, "id", "")) if item else tool_name
-                                )
+                                iid = str(getattr(item, "id", "")) if item else tool_name
 
                             if "done" in raw_type:
                                 ev = _emit_end(tool_name, iid)

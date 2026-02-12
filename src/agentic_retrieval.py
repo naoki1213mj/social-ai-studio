@@ -164,9 +164,7 @@ def _parse_response(response: dict, effort: str) -> dict[str, Any]:
                                 }
                             )
                 except (json.JSONDecodeError, TypeError):
-                    sources.append(
-                        {"content": text, "source": "", "title": "", "score": 0}
-                    )
+                    sources.append({"content": text, "source": "", "title": "", "score": 0})
 
     # Parse activity summary
     activity_summary = []

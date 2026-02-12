@@ -8,9 +8,7 @@ from pydantic import BaseModel, Field
 class ChatRequest(BaseModel):
     """Incoming chat request from the frontend."""
 
-    message: str = Field(
-        ..., description="User input text", min_length=1, max_length=10000
-    )
+    message: str = Field(..., description="User input text", min_length=1, max_length=10000)
     thread_id: str | None = Field(
         None,
         description="Thread ID for multi-turn conversation (null for first message)",

@@ -17,9 +17,7 @@ from src.config import PROJECT_ENDPOINT, VECTOR_STORE_ID
 logger = logging.getLogger(__name__)
 
 # Brand guidelines file path
-BRAND_GUIDELINES_PATH = (
-    Path(__file__).resolve().parent.parent / "data" / "brand_guidelines.md"
-)
+BRAND_GUIDELINES_PATH = Path(__file__).resolve().parent.parent / "data" / "brand_guidelines.md"
 
 # Azure token scope
 from src.config import AZURE_AI_SCOPE as _AZURE_AI_SCOPE

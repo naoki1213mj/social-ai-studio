@@ -113,9 +113,7 @@ async def generate_content(
     rules = PLATFORM_RULES.get(platform_key, PLATFORM_RULES["linkedin"])
 
     lang_instruction = (
-        "Write in natural Japanese appropriate for this platform."
-        if language == "ja"
-        else "Write in English."
+        "Write in natural Japanese appropriate for this platform." if language == "ja" else "Write in English."
     )
 
     result = {
@@ -165,9 +163,7 @@ async def review_content(
     # Basic automated checks
     checks = []
     if char_count > max_chars:
-        checks.append(
-            f"⚠️ Content exceeds {platform_key} limit: {char_count}/{max_chars} characters"
-        )
+        checks.append(f"⚠️ Content exceeds {platform_key} limit: {char_count}/{max_chars} characters")
     if char_count == 0:
         checks.append("⚠️ Content is empty")
     if platform_key == "x" and char_count > 280:
@@ -261,9 +257,7 @@ IMAGE_SIZES: dict[str, str] = {
 async def generate_image(
     prompt: Annotated[str, "Detailed image generation prompt in English"],
     platform: Annotated[str, "Target platform: linkedin, x, or instagram"],
-    style: Annotated[
-        str, "Visual style: photo, illustration, minimal, abstract"
-    ] = "photo",
+    style: Annotated[str, "Visual style: photo, illustration, minimal, abstract"] = "photo",
 ) -> str:
     """Generate a social media visual using GPT Image (gpt-image-1.5).
 
@@ -304,11 +298,7 @@ async def generate_image(
         response = await asyncio.to_thread(_sync_generate)
 
         # Extract image data from response output
-        image_items = [
-            item
-            for item in (response.output or [])
-            if item.type == "image_generation_call"
-        ]
+        image_items = [item for item in (response.output or []) if item.type == "image_generation_call"]
 
         if not image_items or not getattr(image_items[0], "result", None):
             out_types = [i.type for i in (response.output or [])]

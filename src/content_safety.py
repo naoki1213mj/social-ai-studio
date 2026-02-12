@@ -43,13 +43,9 @@ def is_configured() -> bool:
 
         _configured = bool(CONTENT_SAFETY_ENDPOINT)
         if not _configured:
-            logger.info(
-                "Content Safety: CONTENT_SAFETY_ENDPOINT not set, safety checks disabled"
-            )
+            logger.info("Content Safety: CONTENT_SAFETY_ENDPOINT not set, safety checks disabled")
     except ImportError:
-        logger.info(
-            "Content Safety: azure-ai-contentsafety not installed, safety checks disabled"
-        )
+        logger.info("Content Safety: azure-ai-contentsafety not installed, safety checks disabled")
         _configured = False
 
     return _configured
@@ -124,11 +120,7 @@ async def analyze_safety(text: str) -> dict[str, Any]:
         severity_threshold = 2
 
         for item in response.categories_analysis:
-            cat_name = (
-                item.category.value
-                if hasattr(item.category, "value")
-                else str(item.category)
-            )
+            cat_name = item.category.value if hasattr(item.category, "value") else str(item.category)
             severity = item.severity or 0
             categories[cat_name] = severity
             if severity >= severity_threshold:

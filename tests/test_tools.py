@@ -59,17 +59,13 @@ class TestGenerateContent:
 
     @pytest.mark.asyncio
     async def test_language_instruction_en(self):
-        result = await generate_content(
-            topic="test", platform="linkedin", language="en"
-        )
+        result = await generate_content(topic="test", platform="linkedin", language="en")
         data = json.loads(result)
         assert "English" in data["instructions"]
 
     @pytest.mark.asyncio
     async def test_language_instruction_ja(self):
-        result = await generate_content(
-            topic="test", platform="linkedin", language="ja"
-        )
+        result = await generate_content(topic="test", platform="linkedin", language="ja")
         data = json.loads(result)
         assert "Japanese" in data["instructions"]
 
@@ -96,9 +92,7 @@ class TestReviewContent:
 
     @pytest.mark.asyncio
     async def test_returns_valid_json(self):
-        result = await review_content(
-            content="Great product launch!", platform="linkedin"
-        )
+        result = await review_content(content="Great product launch!", platform="linkedin")
         data = json.loads(result)
         assert "platform" in data
         assert "character_count" in data
@@ -129,9 +123,7 @@ class TestReviewContent:
 
     @pytest.mark.asyncio
     async def test_content_with_hashtags_no_warning(self):
-        result = await review_content(
-            content="Great product! #AI #Tech", platform="linkedin"
-        )
+        result = await review_content(content="Great product! #AI #Tech", platform="linkedin")
         data = json.loads(result)
         checks = data["automated_checks"]
         assert not any("hashtag" in c.lower() for c in checks)

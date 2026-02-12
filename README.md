@@ -4,6 +4,9 @@
 ![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript)
 ![Tests](https://img.shields.io/badge/tests-120%20passed-brightgreen)
+![CI](https://github.com/naoki1213mj/social-ai-studio/actions/workflows/ci.yml/badge.svg)
+![Deploy](https://github.com/naoki1213mj/social-ai-studio/actions/workflows/deploy.yml/badge.svg)
+![Security](https://github.com/naoki1213mj/social-ai-studio/actions/workflows/security.yml/badge.svg)
 ![Azure](https://img.shields.io/badge/Azure-Foundry-0078d4?logo=microsoftazure)
 ![License](https://img.shields.io/badge/license-Hackathon-orange)
 
@@ -37,6 +40,8 @@ _Coming soon — 3 min walkthrough of the full reasoning pipeline_
 | 🌙 **Dark / Light Mode** | System-preference-aware theme switching |
 | ✨ **Glassmorphism UI** | Frosted glass, gradient borders, animated tool pills |
 | 🚀 **One-Command Deploy** | `azd up` → Azure Container Apps |
+| ⚙️ **CI/CD Pipeline** | GitHub Actions: Lint → Test → Build → Deploy → Health Check |
+| 🛡️ **Security Scanning** | Trivy vulnerability scan + Gitleaks secret detection + dependency audit |
 | ✅ **120 Unit Tests** | Comprehensive backend test suite |
 
 ## 🏗️ Architecture
@@ -226,6 +231,7 @@ Toggle A/B mode in AI Settings to generate **two content variants with different
 | **Frontend** | React 19 + TypeScript 5 + Vite 7 + Tailwind CSS v3 |
 | **UI Components** | lucide-react icons, react-markdown, recharts (radar charts) |
 | **Deployment** | Azure Container Apps via azd (multi-stage Docker build) |
+| **CI/CD** | GitHub Actions (CI + Deploy + Security Scan) |
 | **Package Mgr** | uv (Python), npm (Node.js) |
 | **Testing** | pytest + pytest-asyncio (120 tests) |
 
@@ -273,6 +279,22 @@ azd up
 ```
 
 This builds a multi-stage Docker image (Node.js frontend → Python backend) and deploys it to Azure Container Apps with managed identity.
+
+### CI/CD Pipeline (GitHub Actions)
+
+Push to `main` triggers the full pipeline automatically:
+
+```
+git push → Lint (Ruff) → Test (120 pytest) → Build (ACR) → Deploy (Container Apps) → Health Check
+```
+
+| Workflow | Trigger | Description |
+|----------|---------|-------------|
+| **CI** (`ci.yml`) | push / PR | Ruff lint + pytest + TypeScript type check |
+| **Deploy** (`deploy.yml`) | push to main | Docker build → ACR → Container App update |
+| **Security** (`security.yml`) | push / PR / weekly | Trivy + Gitleaks + dependency audit |
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full Azure architecture documentation.
 
 ### Environment Variables
 
@@ -427,7 +449,7 @@ Returns: `{"relevance": 4.5, "coherence": 5.0, "fluency": 4.0, "groundedness": 4
 | **Reasoning & Multi-step Thinking** | 25% | 3-phase pipeline (CoT → ReAct → Self-Reflection), live phase badges, controllable depth (low/medium/high), OpenTelemetry tracing of reasoning pipeline with per-tool spans |
 | **Creativity & Originality** | 20% | HITL workflow (approve/edit/refine), A/B content comparison with strategy variants, reasoning phase visualization, GPT Image generation, MCP Server integration, dual evaluation system (self-review + Foundry metrics) |
 | **User Experience & Presentation** | 15% | Polished glassmorphism UI with animations, dark/light mode, 5-language i18n, skeleton loading, suggested questions, keyboard shortcuts, conversation history, content export (Markdown + JSON) |
-| **Technical Implementation** | 15% | agent-framework-core SDK, SSE streaming with OTel distributed tracing, Cosmos DB persistence, Azure Container Apps deployment via azd, 120 unit tests, OpenTelemetry \u2192 Application Insights pipeline, Foundry Evaluation SDK integration |
+| **Technical Implementation** | 15% | agent-framework-core SDK, SSE streaming with OTel distributed tracing, Cosmos DB persistence, Azure Container Apps deployment via azd, GitHub Actions CI/CD (lint → test → build → deploy → security scan), 120 unit tests, OpenTelemetry → Application Insights pipeline, Foundry Evaluation SDK integration |
 
 ## 🧪 Testing
 

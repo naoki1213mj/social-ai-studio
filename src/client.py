@@ -66,15 +66,10 @@ def get_client() -> AzureOpenAIResponsesClient:
     The client is created once and reused for all subsequent calls.
     """
     if not RESPONSES_API_BASE_URL:
-        raise ValueError(
-            "PROJECT_ENDPOINT is not configured. "
-            "Set it in .env or environment variables."
-        )
+        raise ValueError("PROJECT_ENDPOINT is not configured. Set it in .env or environment variables.")
 
     logger.info(
-        "Creating AzureOpenAIResponsesClient: "
-        f"base_url={RESPONSES_API_BASE_URL}, "
-        f"deployment={MODEL_DEPLOYMENT_NAME}"
+        f"Creating AzureOpenAIResponsesClient: base_url={RESPONSES_API_BASE_URL}, deployment={MODEL_DEPLOYMENT_NAME}"
     )
 
     return AzureOpenAIResponsesClient(

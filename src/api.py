@@ -26,26 +26,11 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse, StreamingResponse  # noqa: E402
 
 from src import __version__
-from src.agent import (  # noqa: E402
-    IMAGE_DATA_END,
-    IMAGE_DATA_START,
-    REASONING_END,
-    REASONING_START,
-    run_agent_stream,
-)
+from src.agent import IMAGE_DATA_END, IMAGE_DATA_START, REASONING_END, REASONING_START, run_agent_stream  # noqa: E402
 from src.config import DEBUG  # noqa: E402
-from src.content_safety import (
-    analyze_safety,
-    check_prompt_shield,
-    format_safety_summary,
-)
+from src.content_safety import analyze_safety, check_prompt_shield, format_safety_summary
 from src.content_safety import is_configured as safety_configured  # noqa: E402
-from src.database import (  # noqa: E402
-    delete_conversation,
-    get_conversation,
-    list_conversations,
-    save_conversation,
-)
+from src.database import delete_conversation, get_conversation, list_conversations, save_conversation  # noqa: E402
 from src.models import ChatRequest
 
 # Configure logging
@@ -107,12 +92,8 @@ _SERVE_STATIC = os.getenv("SERVE_STATIC", "false").lower() == "true"
 
 # Regex for reasoning, tool event, and image data markers
 TOOL_EVENT_PATTERN = re.compile(r"__TOOL_EVENT__(.*?)__END_TOOL_EVENT__")
-REASONING_PATTERN = re.compile(
-    rf"{re.escape(REASONING_START)}([\s\S]*?){re.escape(REASONING_END)}"
-)
-IMAGE_DATA_PATTERN = re.compile(
-    rf"{re.escape(IMAGE_DATA_START)}([\s\S]*?){re.escape(IMAGE_DATA_END)}"
-)
+REASONING_PATTERN = re.compile(rf"{re.escape(REASONING_START)}([\s\S]*?){re.escape(REASONING_END)}")
+IMAGE_DATA_PATTERN = re.compile(rf"{re.escape(IMAGE_DATA_START)}([\s\S]*?){re.escape(IMAGE_DATA_END)}")
 
 
 @app.get("/api/health")
@@ -199,7 +180,7 @@ async def chat(request: Request) -> StreamingResponse:
     async def generate():
         """SSE event generator."""
         assistant_content = ""
-        tracer = get_tracer()
+        _tracer = get_tracer()  # noqa: F841 — kept for future span creation
 
         try:
             async for chunk in run_agent_stream(
@@ -311,11 +292,7 @@ async def chat(request: Request) -> StreamingResponse:
             logger.error("Stream error: %s", e, exc_info=True)
             # Send user-friendly error instead of raw exception
             err_msg = str(e).lower()
-            if (
-                "failed to complete the prompt" in err_msg
-                or "429" in err_msg
-                or "500" in err_msg
-            ):
+            if "failed to complete the prompt" in err_msg or "429" in err_msg or "500" in err_msg:
                 user_message = (
                     "Azure AI サービスが一時的に利用できません。しばらくしてから再度お試しください。"
                     " / The Azure AI service is temporarily unavailable. Please try again shortly."
@@ -417,9 +394,7 @@ async def evaluate_content_endpoint(request: Request):
     context = body.get("context")
 
     if not query or not response_text:
-        return JSONResponse(
-            {"error": "query and response are required"}, status_code=400
-        )
+        return JSONResponse({"error": "query and response are required"}, status_code=400)
 
     from src.evaluation import evaluate_content, is_configured
 
@@ -432,9 +407,7 @@ async def evaluate_content_endpoint(request: Request):
             status_code=501,
         )
 
-    scores = await evaluate_content(
-        query=query, response=response_text, context=context
-    )
+    scores = await evaluate_content(query=query, response=response_text, context=context)
     return scores
 
 

@@ -15,9 +15,7 @@ class TestConfigDefaults:
     def test_image_deployment_name_default(self):
         from src.config import IMAGE_DEPLOYMENT_NAME
 
-        assert IMAGE_DEPLOYMENT_NAME == os.getenv(
-            "IMAGE_DEPLOYMENT_NAME", "gpt-image-1.5"
-        )
+        assert IMAGE_DEPLOYMENT_NAME == os.getenv("IMAGE_DEPLOYMENT_NAME", "gpt-image-1.5")
 
     def test_port_is_integer(self):
         from src.config import PORT
@@ -47,9 +45,7 @@ class TestConfigDefaults:
     def test_ai_search_reasoning_effort_default(self):
         from src.config import AI_SEARCH_REASONING_EFFORT
 
-        assert AI_SEARCH_REASONING_EFFORT == os.getenv(
-            "AI_SEARCH_REASONING_EFFORT", "low"
-        )
+        assert AI_SEARCH_REASONING_EFFORT == os.getenv("AI_SEARCH_REASONING_EFFORT", "low")
 
 
 class TestConfigDerived:

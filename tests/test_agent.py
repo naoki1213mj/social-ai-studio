@@ -73,9 +73,7 @@ class TestBuildQueryWithContext:
         assert "en" in result
 
     def test_no_history(self):
-        result = _build_query_with_context(
-            message="test", platforms=["x"], content_type="trend", language="en"
-        )
+        result = _build_query_with_context(message="test", platforms=["x"], content_type="trend", language="en")
         assert "Previous conversation" not in result
 
     def test_with_history(self):
@@ -109,9 +107,7 @@ class TestBuildQueryWithContext:
         assert "msg-0" not in result
 
     def test_single_platform(self):
-        result = _build_query_with_context(
-            message="test", platforms=["instagram"], content_type="event", language="ja"
-        )
+        result = _build_query_with_context(message="test", platforms=["instagram"], content_type="event", language="ja")
         assert "instagram" in result
         assert "ja" in result
 

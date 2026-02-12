@@ -39,18 +39,14 @@ AZURE_AI_SCOPE: str = "https://ai.azure.com/.default"
 
 # Derived: Responses API base URL
 # Format: https://<endpoint>/openai/v1/
-RESPONSES_API_BASE_URL: str = (
-    f"{PROJECT_ENDPOINT}/openai/v1/" if PROJECT_ENDPOINT else ""
-)
+RESPONSES_API_BASE_URL: str = f"{PROJECT_ENDPOINT}/openai/v1/" if PROJECT_ENDPOINT else ""
 
 # Server
 HOST: str = os.getenv("HOST", "0.0.0.0")
 PORT: int = int(os.getenv("PORT", "8000"))
 
 # Observability (OpenTelemetry + Application Insights)
-APPLICATIONINSIGHTS_CONNECTION_STRING: str = os.getenv(
-    "APPLICATIONINSIGHTS_CONNECTION_STRING", ""
-)
+APPLICATIONINSIGHTS_CONNECTION_STRING: str = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING", "")
 OTEL_SERVICE_NAME: str = os.getenv("OTEL_SERVICE_NAME", "social-ai-studio")
 
 # Evaluation

@@ -49,10 +49,7 @@ def setup_telemetry() -> None:
     conn_str = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING", "")
 
     if not conn_str:
-        logger.info(
-            "APPLICATIONINSIGHTS_CONNECTION_STRING not set — "
-            "telemetry disabled (traces will not be exported)"
-        )
+        logger.info("APPLICATIONINSIGHTS_CONNECTION_STRING not set — telemetry disabled (traces will not be exported)")
         _initialized = True
         return
 
@@ -83,15 +80,10 @@ def setup_telemetry() -> None:
             logger.debug("agent-framework-core instrumentation not available")
 
         _initialized = True
-        logger.info(
-            "OpenTelemetry configured → Azure Monitor (service=%s)", SERVICE_NAME
-        )
+        logger.info("OpenTelemetry configured → Azure Monitor (service=%s)", SERVICE_NAME)
 
     except ImportError:
-        logger.warning(
-            "azure-monitor-opentelemetry not installed — "
-            "run: uv add azure-monitor-opentelemetry"
-        )
+        logger.warning("azure-monitor-opentelemetry not installed — run: uv add azure-monitor-opentelemetry")
         _initialized = True
     except Exception as e:
         logger.warning("Telemetry setup failed: %s", e)

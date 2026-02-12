@@ -29,9 +29,7 @@ class TestIsConfigured:
 
     def test_configured_with_both(self):
         with (
-            patch(
-                "src.agentic_retrieval.AI_SEARCH_ENDPOINT", "https://search.example.com"
-            ),
+            patch("src.agentic_retrieval.AI_SEARCH_ENDPOINT", "https://search.example.com"),
             patch("src.agentic_retrieval.AI_SEARCH_KNOWLEDGE_BASE_NAME", "my-kb"),
         ):
             assert is_configured() is True
@@ -45,9 +43,7 @@ class TestIsConfigured:
 
     def test_not_configured_missing_kb(self):
         with (
-            patch(
-                "src.agentic_retrieval.AI_SEARCH_ENDPOINT", "https://search.example.com"
-            ),
+            patch("src.agentic_retrieval.AI_SEARCH_ENDPOINT", "https://search.example.com"),
             patch("src.agentic_retrieval.AI_SEARCH_KNOWLEDGE_BASE_NAME", ""),
         ):
             assert is_configured() is False
@@ -105,9 +101,7 @@ class TestParseResponse:
 
     def test_plain_text_fallback(self):
         response = {
-            "response": [
-                {"content": [{"type": "text", "text": "Plain search result text"}]}
-            ],
+            "response": [{"content": [{"type": "text", "text": "Plain search result text"}]}],
         }
         result = _parse_response(response, "minimal")
         assert len(result["sources"]) == 1
