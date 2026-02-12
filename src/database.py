@@ -2,24 +2,15 @@
 
 Stores and retrieves conversation history using Azure Cosmos DB (NoSQL API).
 Falls back to in-memory storage when Cosmos DB is not configured.
-
-Environment Variables:
-    COSMOS_ENDPOINT: Azure Cosmos DB account endpoint
-    COSMOS_DATABASE: Database name (default: techpulse-social)
-    COSMOS_CONTAINER: Container name (default: conversations)
 """
 
 import logging
-import os
 from datetime import datetime, timezone
 from typing import Any
 
-logger = logging.getLogger(__name__)
+from src.config import COSMOS_CONTAINER, COSMOS_DATABASE, COSMOS_ENDPOINT
 
-# Cosmos DB configuration
-COSMOS_ENDPOINT = os.getenv("COSMOS_ENDPOINT", "")
-COSMOS_DATABASE = os.getenv("COSMOS_DATABASE", "techpulse-social")
-COSMOS_CONTAINER = os.getenv("COSMOS_CONTAINER", "conversations")
+logger = logging.getLogger(__name__)
 
 # Lazy-init Cosmos client
 _cosmos_client = None
@@ -58,13 +49,15 @@ def _get_container():
         )
 
         logger.info(
-            f"Cosmos DB connected: {COSMOS_ENDPOINT}, "
-            f"db={COSMOS_DATABASE}, container={COSMOS_CONTAINER}"
+            "Cosmos DB connected: %s, db=%s, container=%s",
+            COSMOS_ENDPOINT,
+            COSMOS_DATABASE,
+            COSMOS_CONTAINER,
         )
         return _container
 
     except Exception as e:
-        logger.warning(f"Cosmos DB init failed, falling back to in-memory: {e}")
+        logger.warning("Cosmos DB init failed, falling back to in-memory: %s", e)
         return None
 
 
@@ -88,28 +81,24 @@ def save_conversation(
         "title": title,
         "messages": messages,
         "updatedAt": now,
+        "createdAt": now,  # Cosmos upsert preserves existing createdAt via partial update
     }
 
     if container is not None:
         try:
-            # Upsert — creates or updates
-            existing = None
+            # Try to preserve existing createdAt
             try:
                 existing = container.read_item(
                     item=conversation_id, partition_key=user_id
                 )
-            except Exception:
-                pass
-
-            if existing:
                 doc["createdAt"] = existing.get("createdAt", now)
-            else:
-                doc["createdAt"] = now
+            except Exception:
+                pass  # New document — use current time
 
             container.upsert_item(doc)
-            logger.debug(f"Saved conversation {conversation_id} to Cosmos DB")
+            logger.debug("Saved conversation %s to Cosmos DB", conversation_id)
         except Exception as e:
-            logger.error(f"Failed to save to Cosmos DB: {e}")
+            logger.error("Failed to save to Cosmos DB: %s", e)
             # Fallback to memory
             _memory_store[conversation_id] = doc
     else:
@@ -140,7 +129,7 @@ def list_conversations(user_id: str = "anonymous") -> list[dict]:
             )
             return items
         except Exception as e:
-            logger.error(f"Failed to list conversations from Cosmos DB: {e}")
+            logger.error("Failed to list conversations from Cosmos DB: %s", e)
             return []
     else:
         # In-memory fallback
@@ -181,7 +170,7 @@ def delete_conversation(conversation_id: str, user_id: str = "anonymous") -> boo
             container.delete_item(item=conversation_id, partition_key=user_id)
             return True
         except Exception as e:
-            logger.error(f"Failed to delete conversation: {e}")
+            logger.error("Failed to delete conversation: %s", e)
             return False
     else:
         if conversation_id in _memory_store:

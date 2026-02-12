@@ -6,6 +6,7 @@ Uses AzureOpenAIResponsesClient from agent-framework-core.
 
 import json
 import logging
+import time
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 
@@ -13,6 +14,8 @@ from agent_framework import AgentResponseUpdate
 from agent_framework.azure import AzureOpenAIResponsesClient
 
 from src import config
+from src.agentic_retrieval import is_configured as _iq_configured
+from src.agentic_retrieval import search_knowledge_base
 from src.client import get_client
 from src.prompts import SYSTEM_PROMPT
 from src.tools import generate_content, generate_image, review_content
@@ -143,9 +146,6 @@ async def run_agent_stream(
         )
 
     # Add Foundry IQ Agentic Retrieval if configured
-    from src.agentic_retrieval import is_configured as _iq_configured
-    from src.agentic_retrieval import search_knowledge_base
-
     if _iq_configured():
         tools.append(search_knowledge_base)
         logger.info(
@@ -183,8 +183,6 @@ async def run_agent_stream(
 
     # Accumulate reasoning text (SDK sends deltas; we accumulate + REPLACE)
     accumulated_reasoning = ""
-    import time
-
     last_reasoning_send = 0.0
 
     def _should_send_reasoning() -> bool:

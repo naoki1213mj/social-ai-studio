@@ -23,12 +23,16 @@ VECTOR_STORE_ID: str = os.getenv("VECTOR_STORE_ID", "")
 # Foundry IQ / Azure AI Search
 AI_SEARCH_ENDPOINT: str = os.getenv("AI_SEARCH_ENDPOINT", "")
 AI_SEARCH_KNOWLEDGE_BASE_NAME: str = os.getenv("AI_SEARCH_KNOWLEDGE_BASE_NAME", "")
+AI_SEARCH_API_KEY: str = os.getenv("AI_SEARCH_API_KEY", "")
 AI_SEARCH_REASONING_EFFORT: str = os.getenv("AI_SEARCH_REASONING_EFFORT", "low")
 
 # Azure Cosmos DB
 COSMOS_ENDPOINT: str = os.getenv("COSMOS_ENDPOINT", "")
 COSMOS_DATABASE: str = os.getenv("COSMOS_DATABASE", "techpulse-social")
 COSMOS_CONTAINER: str = os.getenv("COSMOS_CONTAINER", "conversations")
+
+# Azure AI token scope (shared across client.py, tools.py, agentic_retrieval.py)
+AZURE_AI_SCOPE: str = "https://ai.azure.com/.default"
 
 # Derived: Responses API base URL
 # Format: https://<endpoint>/openai/v1/

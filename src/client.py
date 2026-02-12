@@ -11,17 +11,14 @@ import logging
 from functools import lru_cache
 from typing import Any
 
-from agent_framework import Content, Message
+from agent_framework import Message
 from agent_framework.azure import AzureOpenAIResponsesClient
 from agent_framework.openai._responses_client import RawOpenAIResponsesClient
 from azure.identity import DefaultAzureCredential
 
-from src.config import MODEL_DEPLOYMENT_NAME, RESPONSES_API_BASE_URL
+from src.config import AZURE_AI_SCOPE, MODEL_DEPLOYMENT_NAME, RESPONSES_API_BASE_URL
 
 logger = logging.getLogger(__name__)
-
-# Azure AI Foundry token scope
-_AZURE_AI_SCOPE = "https://ai.azure.com/.default"
 
 # Shared credential (singleton)
 _credential = DefaultAzureCredential()
@@ -57,7 +54,7 @@ async def _get_token() -> str:
     Returns a fresh token each time, letting DefaultAzureCredential
     handle caching and refresh internally.
     """
-    token = _credential.get_token(_AZURE_AI_SCOPE)
+    token = _credential.get_token(AZURE_AI_SCOPE)
     return token.token
 
 

@@ -12,12 +12,9 @@ from agent_framework import tool
 from azure.identity import DefaultAzureCredential
 from openai import AzureOpenAI
 
-from src.config import IMAGE_DEPLOYMENT_NAME, PROJECT_ENDPOINT
+from src.config import AZURE_AI_SCOPE, IMAGE_DEPLOYMENT_NAME, PROJECT_ENDPOINT
 
 logger = logging.getLogger(__name__)
-
-# Azure token scope (must match client.py)
-_AZURE_AI_SCOPE = "https://ai.azure.com/.default"
 
 # Platform character limits and formatting rules
 PLATFORM_RULES: dict[str, dict] = {
@@ -86,7 +83,9 @@ async def generate_content(
     }
 
     logger.info(
-        f"generate_content called: platform={platform_key}, topic={topic[:50]}..."
+        "generate_content called: platform=%s, topic=%s...",
+        platform_key,
+        topic[:50],
     )
     return json.dumps(result, ensure_ascii=False)
 
@@ -141,8 +140,11 @@ async def review_content(
     }
 
     logger.info(
-        f"review_content called: platform={platform_key}, "
-        f"chars={char_count}/{max_chars}, checks={len(checks)}"
+        "review_content called: platform=%s, chars=%d/%d, checks=%d",
+        platform_key,
+        char_count,
+        max_chars,
+        len(checks),
     )
     return json.dumps(result, ensure_ascii=False)
 
@@ -151,21 +153,31 @@ async def review_content(
 # Image generation tool (gpt-image-1.5)
 # ---------------------------------------------------------------------------
 
-# Reusable image client (lazy init)
+# Reusable image client (lazy init with token refresh)
 _image_client: AzureOpenAI | None = None
+_image_token_expires_on: float = 0.0
 
 
 def _get_image_client() -> AzureOpenAI:
-    """Get or create a singleton AzureOpenAI client for image generation."""
-    global _image_client
-    if _image_client is None:
-        credential = DefaultAzureCredential()
-        token = credential.get_token(_AZURE_AI_SCOPE)
-        _image_client = AzureOpenAI(
-            azure_endpoint=PROJECT_ENDPOINT,
-            api_key=token.token,
-            api_version="2025-04-01-preview",
-        )
+    """Get or create a singleton AzureOpenAI client for image generation.
+
+    Refreshes the token when it expires (tokens are typically valid for ~1 hour).
+    """
+    global _image_client, _image_token_expires_on
+    import time
+
+    now = time.time()
+    if _image_client is not None and now < _image_token_expires_on - 60:
+        return _image_client
+
+    credential = DefaultAzureCredential()
+    token = credential.get_token(AZURE_AI_SCOPE)
+    _image_token_expires_on = token.expires_on
+    _image_client = AzureOpenAI(
+        azure_endpoint=PROJECT_ENDPOINT,
+        api_key=token.token,
+        api_version="2025-04-01-preview",
+    )
     return _image_client
 
 
@@ -203,8 +215,10 @@ async def generate_image(
     )
 
     logger.info(
-        f"generate_image called: platform={platform_key}, style={style}, "
-        f"prompt={prompt[:60]}..."
+        "generate_image called: platform=%s, style=%s, prompt=%s...",
+        platform_key,
+        style,
+        prompt[:60],
     )
 
     try:
@@ -230,13 +244,15 @@ async def generate_image(
         }
 
         logger.info(
-            f"Image generated: platform={platform_key}, size={size}, "
-            f"b64_length={len(image_b64) if image_b64 else 0}"
+            "Image generated: platform=%s, size=%s, b64_length=%d",
+            platform_key,
+            size,
+            len(image_b64) if image_b64 else 0,
         )
         return json.dumps(result, ensure_ascii=False)
 
     except Exception as e:
-        logger.error(f"Image generation failed: {e}", exc_info=True)
+        logger.error("Image generation failed: %s", e, exc_info=True)
         error_result = {
             "platform": platform_key,
             "error": str(e),

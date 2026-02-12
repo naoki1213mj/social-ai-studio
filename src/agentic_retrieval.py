@@ -22,12 +22,18 @@ Reference:
 
 import json
 import logging
-import os
 from enum import StrEnum
 from typing import Annotated, Any
 
 import httpx
 from agent_framework import tool
+
+from src.config import (
+    AI_SEARCH_API_KEY,
+    AI_SEARCH_ENDPOINT,
+    AI_SEARCH_KNOWLEDGE_BASE_NAME,
+    AI_SEARCH_REASONING_EFFORT,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,12 +45,6 @@ class ReasoningEffort(StrEnum):
     LOW = "low"  # Single-pass LLM query planning — balanced (default)
     MEDIUM = "medium"  # Iterative search with semantic classifier — best quality
 
-
-# Configuration
-AI_SEARCH_ENDPOINT = os.getenv("AI_SEARCH_ENDPOINT", "")
-AI_SEARCH_KNOWLEDGE_BASE_NAME = os.getenv("AI_SEARCH_KNOWLEDGE_BASE_NAME", "")
-AI_SEARCH_API_KEY = os.getenv("AI_SEARCH_API_KEY", "")
-AI_SEARCH_REASONING_EFFORT = os.getenv("AI_SEARCH_REASONING_EFFORT", "low")
 
 # API version for Agentic Retrieval
 API_VERSION = "2025-11-01-preview"
@@ -101,18 +101,18 @@ async def retrieve(
         }
 
     headers: dict[str, str] = {"Content-Type": "application/json"}
-    if AI_SEARCH_API_KEY:
-        headers["api-key"] = AI_SEARCH_API_KEY
-    else:
-        # Use DefaultAzureCredential for managed identity
-        try:
-            from azure.identity import DefaultAzureCredential
+    # Prefer DefaultAzureCredential; fall back to API key if set
+    try:
+        from azure.identity import DefaultAzureCredential
 
-            credential = DefaultAzureCredential()
-            token = credential.get_token("https://search.azure.com/.default")
-            headers["Authorization"] = f"Bearer {token.token}"
-        except Exception as e:
-            logger.error(f"Failed to get search token: {e}")
+        credential = DefaultAzureCredential()
+        token = credential.get_token("https://search.azure.com/.default")
+        headers["Authorization"] = f"Bearer {token.token}"
+    except Exception as e:
+        if AI_SEARCH_API_KEY:
+            headers["api-key"] = AI_SEARCH_API_KEY
+        else:
+            logger.error("Failed to get search token: %s", e)
             return {"error": f"Authentication failed: {e}"}
 
     try:
@@ -122,7 +122,9 @@ async def retrieve(
             if response.status_code != 200:
                 error_text = response.text
                 logger.error(
-                    f"Agentic Retrieval failed: {response.status_code} - {error_text}"
+                    "Agentic Retrieval failed: %s - %s",
+                    response.status_code,
+                    error_text,
                 )
                 return {"error": f"Search failed: {response.status_code}"}
 
@@ -132,7 +134,7 @@ async def retrieve(
         return _parse_response(result, effort)
 
     except Exception as e:
-        logger.error(f"Agentic Retrieval error: {e}")
+        logger.error("Agentic Retrieval error: %s", e)
         return {"error": str(e)}
 
 
@@ -266,7 +268,7 @@ async def search_knowledge_base(
     Returns:
         Formatted search results with citations and relevance scores.
     """
-    logger.info(f"Foundry IQ search: query='{query}', effort={reasoning_effort}")
+    logger.info("Foundry IQ search: query='%s', effort=%s", query, reasoning_effort)
 
     result = await retrieve(query, reasoning_effort)
     return _format_results(result)

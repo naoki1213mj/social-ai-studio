@@ -10,6 +10,8 @@ import logging
 import os
 import re
 import uuid
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -33,29 +35,51 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+# ---------- Lifespan (replaces deprecated @app.on_event) ---------- #
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
+    """Application lifespan: startup / shutdown hooks."""
+    # ---- startup ----
+    try:
+        from src.vector_store import ensure_vector_store
+
+        vs_id = ensure_vector_store()
+        import src.config as cfg
+
+        cfg.VECTOR_STORE_ID = vs_id
+        logger.info("Vector Store ready: %s", vs_id)
+    except Exception as e:
+        logger.warning("Vector Store initialization skipped: %s", e)
+
+    yield
+    # ---- shutdown ---- (nothing to clean up)
+
+
 # FastAPI app
 app = FastAPI(
     title="TechPulse Social API",
     description="AI-Powered Social Media Content Studio",
-    version="0.2.0",
+    version="0.3.0",
+    lifespan=lifespan,
 )
 
-# CORS — allow frontend dev server and deployed origins
+# CORS — allow frontend dev and deployed origins
+# NOTE: allow_credentials=True is incompatible with allow_origins=["*"].
+# In production, set ALLOWED_ORIGINS env var to the deployed domain.
+_allowed_origins = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:5173,http://localhost:3000,http://localhost:8000",
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://localhost:8000",
-        "*",  # Allow deployed origin
-    ],
+    allow_origins=[o.strip() for o in _allowed_origins],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# In-memory conversation history (hackathon scope — no persistence)
-_conversations: dict[str, list[dict]] = {}
 
 # ---------- Serve frontend static files in production ---------- #
 _STATIC_DIR = Path(__file__).resolve().parent.parent / "frontend" / "dist"
@@ -100,22 +124,6 @@ async def api_delete_conversation(conversation_id: str):
     return JSONResponse(content={"error": "Not found"}, status_code=404)
 
 
-@app.on_event("startup")
-async def startup_event() -> None:
-    """Initialize Vector Store on startup (non-blocking)."""
-    try:
-        from src.vector_store import ensure_vector_store
-
-        vs_id = ensure_vector_store()
-        # Update runtime config so agent.py can pick it up
-        import src.config as cfg
-
-        cfg.VECTOR_STORE_ID = vs_id
-        logger.info("Vector Store ready: %s", vs_id)
-    except Exception as e:
-        logger.warning("Vector Store initialization skipped: %s", e)
-
-
 @app.post("/api/chat")
 async def chat(request: Request) -> StreamingResponse:
     """Streaming chat endpoint.
@@ -130,17 +138,18 @@ async def chat(request: Request) -> StreamingResponse:
         body = await request.json()
         chat_req = ChatRequest(**body)
     except Exception as e:
-        logger.error(f"Invalid request: {e}")
+        logger.error("Invalid request: %s", e)
         return JSONResponse(
-            content={"error": f"Invalid request: {e}"},
+            content={"error": "Invalid request body"},
             status_code=400,
         )
 
     # Thread ID for multi-turn
     thread_id = chat_req.thread_id or str(uuid.uuid4())
 
-    # Get conversation history
-    history = _conversations.get(thread_id, [])
+    # Get conversation history from database (Cosmos or in-memory)
+    existing = get_conversation(thread_id)
+    history: list[dict] = existing.get("messages", []) if existing else []
 
     # Add user message to history
     history.append({"role": "user", "content": chat_req.message})
@@ -206,7 +215,6 @@ async def chat(request: Request) -> StreamingResponse:
             # Save assistant response to history
             if assistant_content:
                 history.append({"role": "assistant", "content": assistant_content})
-                _conversations[thread_id] = history
 
                 # Persist to Cosmos DB (or in-memory fallback)
                 title = chat_req.message[:50].rstrip()
@@ -221,7 +229,7 @@ async def chat(request: Request) -> StreamingResponse:
             yield json.dumps(done_event) + "\n\n"
 
         except Exception as e:
-            logger.error(f"Stream error: {e}", exc_info=True)
+            logger.error("Stream error: %s", e, exc_info=True)
             error_event = {"error": str(e)}
             yield json.dumps(error_event) + "\n\n"
 
@@ -247,7 +255,7 @@ if _SERVE_STATIC and _STATIC_DIR.is_dir():
             return FileResponse(file_path)
         return FileResponse(_STATIC_DIR / "index.html")
 
-    logger.info(f"Serving frontend static files from {_STATIC_DIR}")
+    logger.info("Serving frontend static files from %s", _STATIC_DIR)
 
 
 def main() -> None:
@@ -256,7 +264,7 @@ def main() -> None:
 
     from src.config import HOST, PORT
 
-    logger.info(f"Starting TechPulse Social API on {HOST}:{PORT}")
+    logger.info("Starting TechPulse Social API on %s:%s", HOST, PORT)
     uvicorn.run(
         "src.api:app",
         host=HOST,
