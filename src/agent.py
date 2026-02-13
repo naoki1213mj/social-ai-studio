@@ -22,13 +22,7 @@ from src.agentic_retrieval import search_knowledge_base
 from src.client import get_client
 from src.prompts import get_system_prompt
 from src.telemetry import get_tracer
-from src.tools import (
-    generate_content,
-    generate_image,
-    init_image_store,
-    pop_pending_images,
-    review_content,
-)
+from src.tools import generate_content, generate_image, init_image_store, pop_pending_images, review_content
 
 logger = logging.getLogger(__name__)
 
@@ -144,6 +138,7 @@ async def run_agent_stream(
     reasoning_effort: str = "medium",
     reasoning_summary: str = "auto",
     ab_mode: bool = False,
+    bilingual: bool = False,
 ) -> AsyncIterator[str]:
     """Execute the agent and yield SSE-formatted events.
 
@@ -161,6 +156,7 @@ async def run_agent_stream(
         reasoning_effort: GPT-5 reasoning depth (low/medium/high).
         reasoning_summary: Thinking display mode (off/auto/concise/detailed).
         ab_mode: If True, generate two content variants for A/B comparison.
+        bilingual: If True, generate content in both English and Japanese.
 
     Yields:
         SSE-formatted strings for each event type.
@@ -229,7 +225,7 @@ async def run_agent_stream(
         default_options["reasoning"] = reasoning_opts
 
     # Create agent with all tools (hosted + custom @tool)
-    system_prompt = get_system_prompt(ab_mode=ab_mode)
+    system_prompt = get_system_prompt(ab_mode=ab_mode, bilingual=bilingual)
     agent = client.as_agent(
         name="social_ai_studio_agent",
         instructions=system_prompt,
@@ -252,6 +248,7 @@ async def run_agent_stream(
             "content_type": content_type,
             "language": language,
             "ab_mode": ab_mode,
+            "bilingual": bilingual,
             "tools.count": len(tools),
         },
     )

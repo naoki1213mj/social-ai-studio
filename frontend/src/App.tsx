@@ -3,6 +3,7 @@ import ContentDisplay from "./components/ContentDisplay";
 import Header from "./components/Header";
 import HistorySidebar from "./components/HistorySidebar";
 import InputForm from "./components/InputForm";
+import PhasesStepper from "./components/PhasesStepper";
 import ReasoningPanel from "./components/ReasoningPanel";
 import SuggestedQuestions from "./components/SuggestedQuestions";
 import ToolEvents from "./components/ToolEvents";
@@ -77,6 +78,7 @@ export default function App() {
       reasoningEffort: string;
       reasoningSummary: string;
       abMode: boolean;
+      bilingual: boolean;
     }) => {
       // Save for retry
       setLastSubmitData(data);
@@ -106,6 +108,7 @@ export default function App() {
             reasoning_effort: data.reasoningEffort,
             reasoning_summary: data.reasoningSummary,
             ab_mode: data.abMode,
+            bilingual: data.bilingual,
           },
           controller.signal,
         )) {
@@ -314,6 +317,17 @@ export default function App() {
                 </button>
               </div>
             )}
+            {/* Phases Stepper — 3-phase pipeline indicator */}
+            {(loading || hasResult) && (
+              <PhasesStepper
+                reasoning={reasoning}
+                isGenerating={loading}
+                toolEvents={toolEvents}
+                hasContent={content.length > 0}
+                t={t}
+              />
+            )}
+
             {/* Reasoning */}
             {(reasoning || loading) && (
               <ReasoningPanel
@@ -343,6 +357,7 @@ export default function App() {
             onRefine={handleRefine}
             safetyResult={safetyResult}
             imageMap={imageMap}
+            query={lastSubmitData?.message}
           />
         )}
       </main>

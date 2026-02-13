@@ -1,7 +1,7 @@
-import { Check, CheckCircle2, Copy, Download, Edit3, ExternalLink, Linkedin, MessageCircle, RefreshCw, Send, ShieldAlert, ShieldCheck, Trophy, Twitter, X } from "lucide-react";
+import { Check, CheckCircle2, Copy, Download, Edit3, ExternalLink, Linkedin, Loader2, MessageCircle, RefreshCw, Send, ShieldAlert, ShieldCheck, Sparkles, Trophy, Twitter, X } from "lucide-react";
 import { useState } from "react";
 import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer } from "recharts";
-import type { SafetyResult } from "../lib/api";
+import { evaluateContent, type EvaluationResult, type SafetyResult } from "../lib/api";
 
 /** Structured content from the agent's JSON output */
 export interface PlatformContent {
@@ -12,6 +12,7 @@ export interface PlatformContent {
   posting_time: string;
   image_prompt?: string;
   image_base64?: string;
+  language?: string;
 }
 
 export interface ContentReview {
@@ -53,6 +54,7 @@ interface ContentCardsProps {
   t: (key: string) => string;
   onRefine?: (platform: string, feedback: string) => void;
   safetyResult?: SafetyResult | null;
+  query?: string;
 }
 
 /** Platform metadata for display */
@@ -132,6 +134,15 @@ function PlatformCard({ item, t, onRefine }: { item: PlatformContent; t: (key: s
         <div className={`flex items-center gap-2 ${meta.color}`}>
           {meta.icon}
           <span className="font-semibold text-sm">{meta.label}</span>
+          {item.language && (
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+              item.language === "ja"
+                ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800"
+                : "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+            }`}>
+              {item.language === "ja" ? "🇯🇵 JA" : "🇺🇸 EN"}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {item.posting_time && (
@@ -158,14 +169,19 @@ function PlatformCard({ item, t, onRefine }: { item: PlatformContent; t: (key: s
         </div>
       </div>
 
-      {/* Image (if generated) */}
+      {/* Image (if generated) — platform-specific aspect ratio */}
       {item.image_base64 && (
         <div className="px-4 pt-3">
           <img
             src={`data:image/png;base64,${item.image_base64}`}
             alt={`${item.platform} visual`}
-            className="w-full rounded-lg object-cover max-h-64"
+            className={`w-full rounded-lg object-cover ${
+              item.platform === "instagram" ? "aspect-square max-h-80" : "aspect-video max-h-64"
+            }`}
           />
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 text-right">
+            {item.platform === "instagram" ? "1080×1080 (1:1)" : item.platform === "x" ? "1600×900 (16:9)" : "1200×627 (1.91:1)"}
+          </p>
         </div>
       )}
 
@@ -354,8 +370,27 @@ function toMarkdown(data: StructuredOutput): string {
   return lines.join("\n");
 }
 
-export default function ContentCards({ data, t, onRefine, safetyResult }: ContentCardsProps) {
+export default function ContentCards({ data, t, onRefine, safetyResult, query }: ContentCardsProps) {
   const { contents, review, sources_used } = data;
+  const [evalResult, setEvalResult] = useState<EvaluationResult | null>(null);
+  const [evalLoading, setEvalLoading] = useState(false);
+  const [evalError, setEvalError] = useState<string | null>(null);
+
+  const handleEvaluate = async () => {
+    if (!query) return;
+    setEvalLoading(true);
+    setEvalError(null);
+    try {
+      const allContent = contents.map((c) => `[${c.platform}]\n${c.body}`).join("\n\n");
+      const result = await evaluateContent(query, allContent);
+      setEvalResult(result);
+    } catch (err) {
+      setEvalError(t("eval.error"));
+      console.error(err);
+    } finally {
+      setEvalLoading(false);
+    }
+  };
 
   const handleExportMarkdown = () => {
     const md = toMarkdown(data);
@@ -517,7 +552,70 @@ export default function ContentCards({ data, t, onRefine, safetyResult }: Conten
           <Download className="w-3.5 h-3.5" />
           {t("export.json")}
         </button>
+        {/* Evaluate with Foundry button */}
+        {query && (
+          <button
+            onClick={handleEvaluate}
+            disabled={evalLoading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 text-amber-700 dark:text-amber-400 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-950/30 dark:hover:to-orange-950/30 border border-amber-200 dark:border-amber-800 transition-all disabled:opacity-50"
+          >
+            {evalLoading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5" />
+            )}
+            {evalLoading ? t("eval.evaluating") : t("eval.evaluate")}
+          </button>
+        )}
       </div>
+
+      {/* Foundry Evaluation Results */}
+      {evalError && (
+        <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-2.5 rounded-xl text-xs">
+          {evalError}
+        </div>
+      )}
+      {evalResult && (
+        <div className="bg-white dark:bg-gray-900 border border-amber-200 dark:border-amber-800 rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-b border-amber-100 dark:border-amber-900">
+            <span className="text-sm font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              {t("eval.title")}
+            </span>
+            <span className="text-[10px] text-gray-400 dark:text-gray-500">Azure AI Evaluation · 1-5 scale</span>
+          </div>
+          <div className="px-4 py-3 space-y-2">
+            {([
+              { key: "relevance", label: t("eval.relevance"), score: evalResult.relevance, reason: evalResult.relevance_reason },
+              { key: "coherence", label: t("eval.coherence"), score: evalResult.coherence, reason: evalResult.coherence_reason },
+              { key: "fluency", label: t("eval.fluency"), score: evalResult.fluency, reason: evalResult.fluency_reason },
+              ...(evalResult.groundedness != null ? [{ key: "groundedness", label: t("eval.groundedness"), score: evalResult.groundedness, reason: evalResult.groundedness_reason }] : []),
+            ] as const).map((item) => {
+              const score = Number(item.score) || 0;
+              const pct = (score / 5) * 100;
+              const color = score >= 4 ? "bg-green-500" : score >= 3 ? "bg-yellow-500" : "bg-red-500";
+              const stars = "★".repeat(Math.round(score)) + "☆".repeat(5 - Math.round(score));
+              return (
+                <div key={item.key} className="group">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="w-28 text-gray-500 dark:text-gray-400 truncate font-medium">{item.label}</span>
+                    <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="w-20 text-right text-amber-500 dark:text-amber-400 text-[11px] tracking-wider">{stars}</span>
+                    <span className="w-6 text-right font-bold text-gray-700 dark:text-gray-300">{score}</span>
+                  </div>
+                  {item.reason && (
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 pl-28 ml-2 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity line-clamp-2">
+                      {item.reason}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

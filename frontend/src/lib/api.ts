@@ -9,6 +9,39 @@ export interface ChatRequest {
   reasoning_effort: string;
   reasoning_summary: string;
   ab_mode?: boolean;
+  bilingual?: boolean;
+}
+
+/** Foundry Evaluation result (4-axis, 1-5 scale) */
+export interface EvaluationResult {
+  relevance: number;
+  coherence: number;
+  fluency: number;
+  groundedness?: number;
+  relevance_reason?: string;
+  coherence_reason?: string;
+  fluency_reason?: string;
+  groundedness_reason?: string;
+}
+
+/**
+ * Call the /api/evaluate endpoint to evaluate generated content with Azure AI Evaluation (Foundry).
+ */
+export async function evaluateContent(
+  query: string,
+  response: string,
+  context?: string,
+): Promise<EvaluationResult> {
+  const res = await fetch("/api/evaluate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, response, context }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `Evaluation failed: ${res.status}`);
+  }
+  return res.json();
 }
 
 export interface ToolEvent {

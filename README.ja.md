@@ -28,16 +28,18 @@
 
 | カテゴリ | 機能 |
 | -------- | ---- |
-| 🧠 **推論** | 3 フェーズパイプライン（CoT → ReAct → Self-Reflection）ライブフェーズバッジ付き |
+| 🧠 **推論** | 3 フェーズパイプライン（CoT → ReAct → Self-Reflection）ライブフェーズバッジ + プログレスステッパー付き |
 | 🔧 **7 エージェントツール** | Web Search, File Search, MCP Docs, Foundry IQ, Content Gen, Review, Image Gen |
 | 🎯 **A/B コンテンツ比較** | 異なる戦略の 2 バリアント生成、サイドバイサイドレーダーチャート |
 | 👤 **HITL ワークフロー** | プラットフォームカードごとに 承認 ✅ / 編集 ✏️ / 改善 🔄 |
 | 📊 **品質スコアリング** | 5 軸レーダーチャート + Foundry Evaluation（関連性・一貫性・流暢性・根拠性） |
 | 🔍 **オブザーバビリティ** | OpenTelemetry → Azure Application Insights → Foundry Tracing |
 | 🛡️ **コンテンツ安全性** | Azure AI Content Safety（テキスト分析 + プロンプトシールド）リアルタイムバッジ |
-| 🖼️ **画像生成** | gpt-image-1.5 によるプラットフォーム最適化ビジュアル |
+| 🖼️ **画像生成** | gpt-image-1.5 によるプラットフォーム最適化ビジュアル（LinkedIn 1.91:1, Instagram 1:1） |
 | 💾 **データ永続化** | Cosmos DB 会話履歴（インメモリフォールバック付き） |
 | 🌐 **5 言語 i18n** | EN / JA / KO / ZH / ES フラグセレクター |
+| 🌏 **バイリンガルモード** | EN + JA 同時コンテンツ生成（言語バッジ付き） |
+| 📝 **15 コンテンツタイプ** | 製品ローンチ、ソートリーダーシップ、ケーススタディ、チュートリアル、カスタム自由入力など |
 | 🌙 **ダーク / ライトモード** | システム設定連動テーマ切替 |
 | ✨ **グラスモーフィズム UI** | フロストガラス、グラデーション、アニメーションツールピル |
 | 🚀 **ワンコマンドデプロイ** | `azd up` → Azure Container Apps |
@@ -364,9 +366,10 @@ git push → Lint (Ruff) → Test (123 pytest) → Build (ACR) → Deploy (Conta
 │   ├── src/
 │   │   ├── App.tsx               # メインアプリ（HITL + リトライ + 経過タイマー）
 │   │   ├── components/
-│   │   │   ├── InputForm.tsx     # トピック入力 + AI 設定パネル
-│   │   │   ├── ContentCards.tsx  # プラットフォームカード + HITL + エクスポート
+│   │   │   ├── InputForm.tsx     # トピック入力 + AI 設定パネル（15 コンテンツタイプ + カスタム）
+│   │   │   ├── ContentCards.tsx  # プラットフォームカード + HITL + エクスポート + Foundry 評価
 │   │   │   ├── ContentDisplay.tsx # JSON → カードパーサー + スケルトン
+│   │   │   ├── PhasesStepper.tsx  # 3 フェーズパイプラインプログレスインジケーター
 │   │   │   ├── ReasoningPanel.tsx # 折りたたみパネル + フェーズバッジ
 │   │   │   ├── ToolEvents.tsx    # アニメーションツール使用ピル
 │   │   │   ├── ABCompareCards.tsx # A/B バリアント比較
@@ -409,7 +412,8 @@ git push → Lint (Ruff) → Test (123 pytest) → Build (ACR) → Deploy (Conta
   "language": "ja",
   "reasoning_effort": "high",
   "reasoning_summary": "detailed",
-  "ab_mode": false
+  "ab_mode": false,
+  "bilingual": false
 }
 ```
 
@@ -462,6 +466,7 @@ SSE ストリームを返します：
 
 - **プラットフォームコンテンツカード** — LinkedIn（青）、X（グレー）、Instagram（ピンク）カードごとコピー
 - **推論フェーズバッジ** — CoT → ReAct → Self-Reflection のライブインジケーター（パルスアニメーション）
+- **3 フェーズプログレスステッパー** — 常時表示のパイプライン進捗インジケーター（CoT → ReAct → Self-Reflection）
 - **ツール使用ピル** — グラデーショングロー付きアニメーションバッジ（Web Search, File Search, MCP 等）
 - **品質レーダーチャート** — recharts による 5 軸ビジュアライゼーション + 総合スコア
 - **コンテンツ安全性バッジ** — Azure AI Content Safety 分析に基づく動的バッジ
@@ -483,6 +488,10 @@ SSE ストリームを返します：
 - **グラデーションデザイン** — アニメーショングラデーションボーダー、ブランドグラデーションヘッダー
 - **スケルトンローディング** — 生成中のシマープレースホルダー
 - **カードアニメーション** — コンテンツカード出現時のスタガードフェードイン
+- **プラットフォーム別画像** — LinkedIn/X 横長（1.91:1）、Instagram 正方形（1:1）寸法ラベル付き
+- **15 コンテンツタイプ** — カスタム自由入力含むあらゆる投稿パターンに対応
+- **バイリンガルモード** — EN + JA トグル（コンテンツカードに言語バッジ表示）
+- **Foundry 評価ボタン** — ワンクリック「Evaluate with Foundry」（関連性・一貫性・流暢性・根拠性の 4 軸スコア）
 - **ダーク / ライトモード** — システム設定連動
 - **5 言語 i18n** — EN / JA / KO / ZH / ES（フラグセレクター）
 

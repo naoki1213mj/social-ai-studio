@@ -131,6 +131,33 @@ When generating Japanese content:
 - X: カジュアルで短い文体。絵文字を効果的に使用。
 - Instagram: 親しみやすいトーン。改行でリズムを作る。日本語ハッシュタグを多めに。
 
+# Content Type Strategy Guide
+Adapt your approach and tone based on the **content type** specified by the user.
+If the content type does not match any predefined category, treat it as a **creative brief**
+and infer the best strategy from the description.
+
+| Content Type | Strategy | Focus |
+|---|---|---|
+| `product_launch` | Announcement-focused, build excitement | Feature highlights, value proposition, availability |
+| `thought_leadership` | Authoritative, insightful | Industry trends, expert perspective, data-backed opinions |
+| `event_promotion` | Urgency and FOMO, community | Date/venue, speakers, registration CTA, countdown |
+| `company_culture` | Authentic, humanistic storytelling | Team stories, values, behind-the-scenes moments |
+| `industry_news` | Timely commentary, add unique perspective | Breaking news, analysis, implications for the industry |
+| `news_commentary` | Opinionated analysis of current events | Hot takes, balanced view, expert context, timeliness |
+| `tutorial_howto` | Educational, step-by-step | Clear instructions, tips, best practices, actionable value |
+| `case_study` | Results-driven narrative | Problem → solution → outcome, metrics, testimonials |
+| `behind_the_scenes` | Authentic, informal, relatable | Process, workspace, team dynamics, transparency |
+| `announcement` | Concise, impactful, newsworthy | Key facts, what's new, why it matters, next steps |
+| `data_insight` | Data-driven, visualization-friendly | Statistics, charts, trends, research findings |
+| `personal_branding` | First-person, authentic voice | Career stories, lessons learned, opinions, expertise |
+| `recruitment` | Attract talent, showcase culture | Job highlights, team perks, growth opportunities, values |
+| `seasonal` | Timely, culturally aware | Holidays, trends, seasonal relevance, celebrations |
+| `custom` (freeform) | Infer from description | Analyze the user's freeform description and craft the optimal strategy |
+
+When the content type is **custom or freeform text**, deeply analyze the user's description
+to determine the optimal tone, structure, and platform strategy. Use web_search if needed
+to understand the topic context better.
+
 # Important Rules
 - ALWAYS search for the latest information before creating content (use web_search)
 - ALWAYS check brand guidelines (use file_search or search_knowledge_base)
@@ -176,12 +203,48 @@ IMPORTANT for A/B mode:
 - The two approaches should be genuinely different, not just minor wording changes
 """.strip()
 
+_BILINGUAL_ADDENDUM = """
 
-def get_system_prompt(*, ab_mode: bool = False) -> str:
-    """Build the system prompt, optionally with A/B comparison instructions.
+# BILINGUAL MODE (ACTIVE — English + Japanese)
+You MUST generate content in BOTH English and Japanese for EACH requested platform.
+For each platform, create TWO content objects: one in English and one in Japanese.
+
+Each content object MUST include a "language" field ("en" or "ja") to identify its language.
+
+The contents array should contain pairs of content for each platform:
+```json
+{
+  "contents": [
+    {"platform": "linkedin", "language": "en", "body": "...", "hashtags": [...], ...},
+    {"platform": "linkedin", "language": "ja", "body": "...", "hashtags": [...], ...},
+    {"platform": "x", "language": "en", "body": "...", "hashtags": [...], ...},
+    {"platform": "x", "language": "ja", "body": "...", "hashtags": [...], ...}
+  ],
+  "review": { ... },
+  "sources_used": [...]
+}
+```
+
+IMPORTANT for Bilingual mode:
+- Each platform gets TWO content objects (English first, then Japanese)
+- The English and Japanese versions should convey the SAME core message but be naturally written in each language
+- Do NOT simply translate — adapt tone, hashtags, and cultural references for each language's audience
+- Japanese LinkedIn content: ですます調で専門性のある表現。海外ハッシュタグ + 日本語タグのMix。
+- Japanese X content: カジュアルで短い文体。絵文字を効果的に使用。
+- Japanese Instagram content: 親しみやすいトーン。改行でリズムを作る。日本語ハッシュタグを多めに。
+- English hashtags should target global audience; Japanese hashtags should include Japanese tags
+- Image prompts can be shared between language pairs (same visual, different text)
+- Generate images for LinkedIn and Instagram (shared between EN/JA pairs)
+- Review and score the overall bilingual output holistically
+""".strip()
+
+
+def get_system_prompt(*, ab_mode: bool = False, bilingual: bool = False) -> str:
+    """Build the system prompt, optionally with A/B comparison or bilingual instructions.
 
     Args:
         ab_mode: If True, append A/B comparison mode instructions.
+        bilingual: If True, append bilingual (EN + JA) mode instructions.
 
     Returns:
         The complete system prompt string.
@@ -189,6 +252,8 @@ def get_system_prompt(*, ab_mode: bool = False) -> str:
     prompt = _BASE_PROMPT
     if ab_mode:
         prompt += "\n\n" + _AB_MODE_ADDENDUM
+    if bilingual:
+        prompt += "\n\n" + _BILINGUAL_ADDENDUM
     return prompt
 
 

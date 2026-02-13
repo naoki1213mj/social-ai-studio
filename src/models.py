@@ -34,6 +34,10 @@ class ChatRequest(BaseModel):
         default=False,
         description="A/B comparison mode: generate two content variants with different strategies",
     )
+    bilingual: bool = Field(
+        default=False,
+        description="Bilingual mode: generate content in both English and Japanese for each platform",
+    )
 
 
 class ToolEvent(BaseModel):

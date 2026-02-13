@@ -129,6 +129,38 @@ const translations: Record<Locale, Record<string, string>> = {
     "review.safetyPending": "Checking...",
     "review.improvements": "Improvements Made",
 
+    // Foundry Evaluation
+    "eval.title": "Foundry Evaluation",
+    "eval.evaluate": "Evaluate with Foundry",
+    "eval.evaluating": "Evaluating...",
+    "eval.relevance": "Relevance",
+    "eval.coherence": "Coherence",
+    "eval.fluency": "Fluency",
+    "eval.groundedness": "Groundedness",
+    "eval.error": "Evaluation failed. Please try again.",
+    "eval.score": "Score",
+
+    // Bilingual
+    "settings.bilingual": "Bilingual (EN + JA)",
+    "settings.bilingual.description": "Generate content in both English and Japanese for each platform",
+
+    // Phase Stepper
+    "phase.cot": "Strategic Analysis",
+    "phase.react": "Content Creation",
+    "phase.reflect": "Quality Review",
+
+    // Content Types (expanded)
+    "contentType.news_commentary": "News Commentary",
+    "contentType.tutorial_howto": "Tutorial / How-to",
+    "contentType.case_study": "Case Study",
+    "contentType.behind_the_scenes": "Behind the Scenes",
+    "contentType.announcement": "Announcement",
+    "contentType.data_insight": "Data / Infographic",
+    "contentType.personal_branding": "Personal Branding",
+    "contentType.recruitment": "Recruitment / Hiring",
+    "contentType.seasonal": "Seasonal / Holiday",
+    "contentType.custom": "Custom (free text)",
+
     // Theme / i18n
     "theme.light": "Light",
     "theme.dark": "Dark",
@@ -260,6 +292,38 @@ const translations: Record<Locale, Record<string, string>> = {
     "review.safe": "安全性確認済み",
     "review.unsafe": "安全性の問題",
     "review.safetyPending": "確認中...",
+
+    // Foundry Evaluation
+    "eval.title": "Foundry 評価",
+    "eval.evaluate": "Foundry で評価",
+    "eval.evaluating": "評価中...",
+    "eval.relevance": "関連性",
+    "eval.coherence": "一貫性",
+    "eval.fluency": "流暢性",
+    "eval.groundedness": "根拠性",
+    "eval.error": "評価に失敗しました。もう一度お試しください。",
+    "eval.score": "スコア",
+
+    // バイリンガル
+    "settings.bilingual": "バイリンガル (EN + JA)",
+    "settings.bilingual.description": "各プラットフォームのコンテンツを英語と日本語の両方で生成",
+
+    // フェーズステッパー
+    "phase.cot": "戦略分析",
+    "phase.react": "コンテンツ生成",
+    "phase.reflect": "品質検証",
+
+    // コンテンツタイプ（拡張）
+    "contentType.news_commentary": "ニュース解説",
+    "contentType.tutorial_howto": "チュートリアル / How-to",
+    "contentType.case_study": "事例紹介",
+    "contentType.behind_the_scenes": "舞台裏 / 裏側",
+    "contentType.announcement": "お知らせ",
+    "contentType.data_insight": "データ / インフォグラフィック",
+    "contentType.personal_branding": "パーソナルブランディング",
+    "contentType.recruitment": "採用 / 求人",
+    "contentType.seasonal": "季節・イベント",
+    "contentType.custom": "カスタム（自由入力）",
 
     // Theme / i18n
     "theme.light": "ライト",
@@ -393,6 +457,38 @@ const translations: Record<Locale, Record<string, string>> = {
     "review.unsafe": "안전 문제",
     "review.safetyPending": "확인 중...",
 
+    // Foundry Evaluation
+    "eval.title": "Foundry 평가",
+    "eval.evaluate": "Foundry로 평가",
+    "eval.evaluating": "평가 중...",
+    "eval.relevance": "관련성",
+    "eval.coherence": "일관성",
+    "eval.fluency": "유창성",
+    "eval.groundedness": "근거성",
+    "eval.error": "평가에 실패했습니다. 다시 시도해 주세요.",
+    "eval.score": "점수",
+
+    // 이중 언어
+    "settings.bilingual": "이중 언어 (EN + JA)",
+    "settings.bilingual.description": "각 플랫폼의 콘텐츠를 영어와 일본어 모두로 생성",
+
+    // 단계 스텝퍼
+    "phase.cot": "전략 분석",
+    "phase.react": "콘텐츠 생성",
+    "phase.reflect": "품질 검증",
+
+    // 콘텐츠 유형 (확장)
+    "contentType.news_commentary": "뉴스 해설",
+    "contentType.tutorial_howto": "튜토리얼 / 방법",
+    "contentType.case_study": "사례 연구",
+    "contentType.behind_the_scenes": "비하인드 스토리",
+    "contentType.announcement": "공지사항",
+    "contentType.data_insight": "데이터 / 인포그래픽",
+    "contentType.personal_branding": "퍼스널 브랜딩",
+    "contentType.recruitment": "채용 / 구인",
+    "contentType.seasonal": "시즌 / 이벤트",
+    "contentType.custom": "커스텀 (자유 입력)",
+
     // Theme / i18n
     "theme.light": "라이트",
     "theme.dark": "다크",
@@ -525,6 +621,38 @@ const translations: Record<Locale, Record<string, string>> = {
     "review.unsafe": "安全问题",
     "review.safetyPending": "检查中...",
 
+    // Foundry Evaluation
+    "eval.title": "Foundry 评估",
+    "eval.evaluate": "使用 Foundry 评估",
+    "eval.evaluating": "评估中...",
+    "eval.relevance": "相关性",
+    "eval.coherence": "连贯性",
+    "eval.fluency": "流畅性",
+    "eval.groundedness": "根据性",
+    "eval.error": "评估失败，请重试。",
+    "eval.score": "分数",
+
+    // 双语
+    "settings.bilingual": "双语 (EN + JA)",
+    "settings.bilingual.description": "为每个平台同时生成英文和日文内容",
+
+    // 阶段步进器
+    "phase.cot": "战略分析",
+    "phase.react": "内容生成",
+    "phase.reflect": "质量审查",
+
+    // 内容类型 (扩展)
+    "contentType.news_commentary": "新闻评论",
+    "contentType.tutorial_howto": "教程 / 指南",
+    "contentType.case_study": "案例研究",
+    "contentType.behind_the_scenes": "幕后故事",
+    "contentType.announcement": "公告",
+    "contentType.data_insight": "数据 / 信息图",
+    "contentType.personal_branding": "个人品牌",
+    "contentType.recruitment": "招聘",
+    "contentType.seasonal": "季节 / 节日",
+    "contentType.custom": "自定义（自由输入）",
+
     // Theme / i18n
     "theme.light": "浅色",
     "theme.dark": "深色",
@@ -656,6 +784,38 @@ const translations: Record<Locale, Record<string, string>> = {
     "review.safe": "Contenido Seguro",
     "review.unsafe": "Problema de Seguridad",
     "review.safetyPending": "Verificando...",
+
+    // Foundry Evaluation
+    "eval.title": "Evaluación Foundry",
+    "eval.evaluate": "Evaluar con Foundry",
+    "eval.evaluating": "Evaluando...",
+    "eval.relevance": "Relevancia",
+    "eval.coherence": "Coherencia",
+    "eval.fluency": "Fluidez",
+    "eval.groundedness": "Fundamentación",
+    "eval.error": "La evaluación falló. Inténtalo de nuevo.",
+    "eval.score": "Puntuación",
+
+    // Bilingüe
+    "settings.bilingual": "Bilingüe (EN + JA)",
+    "settings.bilingual.description": "Generar contenido en inglés y japonés para cada plataforma",
+
+    // Pasos de fase
+    "phase.cot": "Análisis Estratégico",
+    "phase.react": "Creación de Contenido",
+    "phase.reflect": "Revisión de Calidad",
+
+    // Tipos de contenido (expandidos)
+    "contentType.news_commentary": "Comentario de Noticias",
+    "contentType.tutorial_howto": "Tutorial / Cómo hacerlo",
+    "contentType.case_study": "Caso de Estudio",
+    "contentType.behind_the_scenes": "Detrás de Escenas",
+    "contentType.announcement": "Anuncio",
+    "contentType.data_insight": "Datos / Infografía",
+    "contentType.personal_branding": "Marca Personal",
+    "contentType.recruitment": "Reclutamiento",
+    "contentType.seasonal": "Estacional / Festividad",
+    "contentType.custom": "Personalizado (texto libre)",
 
     // Theme / i18n
     "theme.light": "Claro",

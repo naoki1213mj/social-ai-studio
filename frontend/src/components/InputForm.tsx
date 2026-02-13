@@ -12,6 +12,7 @@ interface InputFormProps {
     reasoningEffort: string;
     reasoningSummary: string;
     abMode: boolean;
+    bilingual: boolean;
   }) => void;
   onStop?: () => void;
   /** Allow external topic injection (from SuggestedQuestions) */
@@ -26,6 +27,16 @@ const CONTENT_TYPES = [
   "event_promotion",
   "company_culture",
   "tech_insight",
+  "news_commentary",
+  "tutorial_howto",
+  "case_study",
+  "behind_the_scenes",
+  "announcement",
+  "data_insight",
+  "personal_branding",
+  "recruitment",
+  "seasonal",
+  "custom",
 ] as const;
 
 const REASONING_EFFORTS = [
@@ -52,12 +63,19 @@ export default function InputForm({
   const [message, setMessage] = useState("");
   const [platforms, setPlatforms] = useState<string[]>(["linkedin", "x"]);
   const [contentType, setContentType] = useState("product_launch");
+  const [customContentType, setCustomContentType] = useState("");
   const [language, setLanguage] = useState("en");
   const [reasoningEffort, setReasoningEffort] = useState("medium");
   const [reasoningSummary, setReasoningSummary] = useState("auto");
   const [abMode, setAbMode] = useState(false);
+  const [bilingual, setBilingual] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Effective content type — use custom text when "custom" is selected
+  const effectiveContentType = contentType === "custom" && customContentType.trim()
+    ? customContentType.trim()
+    : contentType;
 
   // Keyboard shortcuts: Ctrl/Cmd+Enter to submit, Escape to stop
   useEffect(() => {
@@ -75,18 +93,19 @@ export default function InputForm({
           onSubmit({
             message,
             platforms,
-            contentType,
+            contentType: effectiveContentType,
             language,
             reasoningEffort,
             reasoningSummary,
             abMode,
+            bilingual,
           });
         }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [loading, message, platforms, contentType, language, reasoningEffort, reasoningSummary, abMode, onSubmit, onStop]);
+  }, [loading, message, platforms, contentType, customContentType, language, reasoningEffort, reasoningSummary, abMode, bilingual, onSubmit, onStop]);
 
   // Handle external topic injection
   useEffect(() => {
@@ -108,11 +127,12 @@ export default function InputForm({
     onSubmit({
       message,
       platforms,
-      contentType,
+      contentType: effectiveContentType,
       language,
       reasoningEffort,
       reasoningSummary,
       abMode,
+      bilingual,
     });
   };
 
@@ -176,6 +196,16 @@ export default function InputForm({
               </option>
             ))}
           </select>
+          {/* Custom content type freeform input */}
+          {contentType === "custom" && (
+            <input
+              type="text"
+              value={customContentType}
+              onChange={(e) => setCustomContentType(e.target.value)}
+              placeholder={t("input.topic.placeholder")}
+              className="w-full mt-1.5 px-3 py-2 border border-gray-200/60 dark:border-gray-700/60 rounded-xl bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder:text-gray-400"
+            />
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">
@@ -208,6 +238,7 @@ export default function InputForm({
             <span className="text-xs text-gray-400 dark:text-gray-500">
               🧠 {reasoningEffort} · {reasoningSummary}
               {abMode && " · A/B"}
+              {bilingual && " · 🌐 EN+JA"}
             </span>
           </div>
           {showSettings ? (
@@ -294,6 +325,30 @@ export default function InputForm({
               </label>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                 {t("settings.abMode.description") || "Generate two variants with different strategies for comparison"}
+              </p>
+            </div>
+
+            {/* Bilingual Mode (EN + JA) */}
+            <div>
+              <label className="flex items-center justify-between cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-gradient-to-r from-emerald-500 to-teal-500 text-white">🌐</span>
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                    {t("settings.bilingual") || "Bilingual (EN + JA)"}
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={bilingual}
+                    onChange={(e) => setBilingual(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-gray-200 dark:bg-gray-700 peer-focus:ring-2 peer-focus:ring-emerald-500/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-emerald-500 peer-checked:to-teal-500" />
+                </div>
+              </label>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                {t("settings.bilingual.description") || "Generate content in both English and Japanese for each platform"}
               </p>
             </div>
           </div>

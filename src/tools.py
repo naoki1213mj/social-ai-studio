@@ -14,12 +14,7 @@ from agent_framework import tool
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import OpenAI
 
-from src.config import (
-    AZURE_AI_SCOPE,
-    IMAGE_DEPLOYMENT_NAME,
-    MODEL_DEPLOYMENT_NAME,
-    RESPONSES_API_BASE_URL,
-)
+from src.config import AZURE_AI_SCOPE, IMAGE_DEPLOYMENT_NAME, MODEL_DEPLOYMENT_NAME, RESPONSES_API_BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -244,12 +239,21 @@ def _get_image_client() -> OpenAI:
     return _image_client
 
 
-# Platform-specific image sizes (not used in Responses API approach,
-# but kept for prompt context)
+# Platform-specific image sizes optimized for each social media platform.
+# gpt-image-1.5 supports: 1024x1024, 1024x1536, 1536x1024, auto
+# LinkedIn & X → landscape (1536x1024)
+# Instagram → square (1024x1024)
 IMAGE_SIZES: dict[str, str] = {
-    "linkedin": "1024x1024",
-    "x": "1024x1024",
+    "linkedin": "1536x1024",
+    "x": "1536x1024",
     "instagram": "1024x1024",
+}
+
+# Recommended display dimensions for each platform (informational)
+PLATFORM_IMAGE_DIMENSIONS: dict[str, dict] = {
+    "linkedin": {"width": 1200, "height": 627, "aspect": "1.91:1", "label": "Landscape"},
+    "x": {"width": 1600, "height": 900, "aspect": "16:9", "label": "Landscape"},
+    "instagram": {"width": 1080, "height": 1080, "aspect": "1:1", "label": "Square"},
 }
 
 
@@ -268,12 +272,16 @@ async def generate_image(
     platform_key = platform.lower().strip()
     size = IMAGE_SIZES.get(platform_key, "1024x1024")
 
-    # Enhance prompt with style and platform context
+    # Enhance prompt with style, platform context, and aspect ratio
+    dims = PLATFORM_IMAGE_DIMENSIONS.get(platform_key, {})
+    aspect_label = dims.get("label", "")
+    aspect_ratio = dims.get("aspect", "")
     enhanced_prompt = (
         f"{prompt}. "
         f"Style: {style}. "
-        f"Optimized for {platform_key} social media ({size}). "
-        f"Professional, modern, high quality."
+        f"Optimized for {platform_key} social media. "
+        f"Aspect ratio: {aspect_ratio} ({aspect_label}, {size}). "
+        f"Professional, modern, high quality. No text overlays."
     )
 
     logger.info(

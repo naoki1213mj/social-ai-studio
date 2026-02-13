@@ -30,16 +30,18 @@ Single reasoning agent (gpt-5.2) × 7 tools × 3-phase thinking pipeline × prod
 
 | Category | Feature |
 |----------|---------|
-| 🧠 **Reasoning** | 3-phase pipeline (CoT → ReAct → Self-Reflection) with live phase badges |
+| 🧠 **Reasoning** | 3-phase pipeline (CoT → ReAct → Self-Reflection) with live phase badges + progress stepper |
 | 🔧 **7 Agent Tools** | Web Search, File Search, MCP Docs, Foundry IQ, Content Gen, Review, Image Gen |
 | 🎯 **A/B Comparison** | Two content variants with different strategies, side-by-side radar charts |
 | 👤 **HITL Workflow** | Approve ✅ / Edit ✏️ / Refine 🔄 per platform card |
 | 📊 **Quality Scoring** | 5-axis radar chart + Foundry Evaluation (Relevance, Coherence, Fluency, Groundedness) |
 | 🔍 **Observability** | OpenTelemetry → Azure Application Insights → Foundry Tracing |
 | 🛡️ **Content Safety** | Azure AI Content Safety (text analysis + prompt shield) with real-time badge |
-| 🖼️ **Image Generation** | gpt-image-1.5 creates platform-optimized visuals |
+| 🖼️ **Image Generation** | gpt-image-1.5 creates platform-optimized visuals (LinkedIn 1.91:1, Instagram 1:1) |
 | 💾 **Persistence** | Cosmos DB conversation history with in-memory fallback |
 | 🌐 **5-Language i18n** | EN / JA / KO / ZH / ES with flag-based selector |
+| 🌏 **Bilingual Mode** | EN + JA simultaneous content generation with language badges |
+| 📝 **15 Content Types** | Product launch, thought leadership, case study, tutorial, custom freeform, and more |
 | 🌙 **Dark / Light Mode** | System-preference-aware theme switching |
 | ✨ **Glassmorphism UI** | Frosted glass, gradient borders, animated tool pills |
 | 🚀 **One-Command Deploy** | `azd up` → Azure Container Apps |
@@ -370,9 +372,10 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full Azure architecture
 │   ├── src/
 │   │   ├── App.tsx               # Main application w/ HITL + retry + elapsed timer
 │   │   ├── components/
-│   │   │   ├── InputForm.tsx     # Topic input + AI Settings panel
-│   │   │   ├── ContentCards.tsx  # Platform cards + HITL controls + Export
+│   │   │   ├── InputForm.tsx     # Topic input + AI Settings (15 content types + custom)
+│   │   │   ├── ContentCards.tsx  # Platform cards + HITL + Export + Foundry Eval
 │   │   │   ├── ContentDisplay.tsx # JSON → Cards parser + Skeleton
+│   │   │   ├── PhasesStepper.tsx  # 3-phase pipeline progress indicator
 │   │   │   ├── ReasoningPanel.tsx # Collapsible panel + Phase Badges
 │   │   │   ├── ToolEvents.tsx    # Animated tool usage pills
 │   │   │   ├── ABCompareCards.tsx # A/B variant comparison
@@ -411,7 +414,8 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full Azure architecture
   "language": "ja",
   "reasoning_effort": "high",
   "reasoning_summary": "detailed",
-  "ab_mode": false
+  "ab_mode": false,
+  "bilingual": false
 }
 ```
 
@@ -464,6 +468,7 @@ Returns: `{"safe": true, "categories": {...}, "prompt_shield": {...}, "summary":
 
 - **Platform Content Cards** — LinkedIn (blue), X (gray), Instagram (pink) with per-card copy
 - **Reasoning Phase Badges** — Live CoT → ReAct → Self-Reflection indicators with pulse animation
+- **3-Phase Progress Stepper** — Always-visible pipeline progress indicator (CoT → ReAct → Self-Reflection)
 - **Tool Usage Pills** — Animated gradient-glow badges (Web Search, File Search, MCP, Content Gen, etc.)
 - **Quality Radar Chart** — 5-axis recharts visualization with overall score
 - **Content Safety Badge** — Dynamic badge based on Azure AI Content Safety analysis
@@ -485,6 +490,10 @@ Returns: `{"safe": true, "categories": {...}, "prompt_shield": {...}, "summary":
 - **Gradient Design** — Animated gradient borders, brand gradient header
 - **Skeleton Loading** — Shimmer placeholders during generation
 - **Card Animations** — Staggered fade-in on content card appearance
+- **Platform-Specific Images** — LinkedIn/X landscape (1.91:1), Instagram square (1:1) with dimension labels
+- **15 Content Types** — Including custom freeform input for any posting pattern
+- **Bilingual Mode** — EN + JA toggle with language badges on content cards
+- **Foundry Evaluation Button** — One-click "Evaluate with Foundry" with 4-axis score display
 - **Dark / Light Mode** — System-preference-aware
 - **5-Language i18n** — EN / JA / KO / ZH / ES with flag selector
 

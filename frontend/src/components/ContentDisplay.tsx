@@ -11,6 +11,7 @@ interface ContentDisplayProps {
   onRefine?: (platform: string, feedback: string) => void;
   safetyResult?: SafetyResult | null;
   imageMap?: Record<string, string>;
+  query?: string;
 }
 
 /**
@@ -86,6 +87,7 @@ export default function ContentDisplay({
   onRefine,
   safetyResult,
   imageMap = {},
+  query,
 }: ContentDisplayProps) {
   const [copied, setCopied] = useState(false);
 
@@ -109,7 +111,7 @@ export default function ContentDisplay({
       return <ABCompareCards data={merged} t={t} onRefine={onRefine} />;
     }
     const merged = mergeImages(parsed.data, imageMap);
-    return <ContentCards data={merged} t={t} onRefine={onRefine} safetyResult={safetyResult} />;
+    return <ContentCards data={merged} t={t} onRefine={onRefine} safetyResult={safetyResult} query={query} />;
   }
 
   // Detect if content looks like JSON output (hide raw JSON during streaming)
