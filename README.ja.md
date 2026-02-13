@@ -113,6 +113,7 @@ graph LR
         subgraph Data["データ & 可観測性"]
             Cosmos["💾 Cosmos DB"]
             VS["📁 Vector Store"]
+            AISearch["🔍 AI Search<br/>(Foundry IQ)"]
             AppInsights["📊 Application Insights"]
         end
     end
@@ -125,7 +126,7 @@ graph LR
     ACR -->|pull| CA
     CA -->|Responses API| Foundry
     Foundry --> GPT52 & GPTImg
-    CA --> Bing & VS & Safety & Cosmos
+    CA --> Bing & VS & AISearch & Safety & Cosmos
     CA --> MCP
     CA -.->|OTel| AppInsights
 ```
@@ -332,6 +333,8 @@ git push → Lint (Ruff) → Test (123 pytest) → Build (ACR) → Deploy (Conta
 | `COSMOS_CONTAINER` | Cosmos DB コンテナ名 | いいえ |
 | `AI_SEARCH_ENDPOINT` | Azure AI Search エンドポイント（Foundry IQ） | いいえ |
 | `AI_SEARCH_KNOWLEDGE_BASE_NAME` | ナレッジベース名 | いいえ |
+| `AI_SEARCH_API_KEY` | AI Search 管理キー（MI 使用時は不要） | いいえ |
+| `AI_SEARCH_REASONING_EFFORT` | 検索推論レベル（minimal/low/medium） | いいえ |
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | 分散トレーシング用 App Insights | いいえ |
 | `CONTENT_SAFETY_ENDPOINT` | Azure AI Content Safety エンドポイント | いいえ |
 | `OTEL_SERVICE_NAME` | OpenTelemetry サービス名 | いいえ |

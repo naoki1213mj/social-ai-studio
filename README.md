@@ -115,6 +115,7 @@ graph LR
         subgraph Data["Data & Observability"]
             Cosmos["💾 Cosmos DB"]
             VS["📁 Vector Store"]
+            AISearch["🔍 AI Search<br/>(Foundry IQ)"]
             AppInsights["📊 Application Insights"]
         end
     end
@@ -127,7 +128,7 @@ graph LR
     ACR -->|pull| CA
     CA -->|Responses API| Foundry
     Foundry --> GPT52 & GPTImg
-    CA --> Bing & VS & Safety & Cosmos
+    CA --> Bing & VS & AISearch & Safety & Cosmos
     CA --> MCP
     CA -.->|OTel| AppInsights
 ```
@@ -334,6 +335,9 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full Azure architecture
 | `COSMOS_CONTAINER` | Cosmos DB container name | No |
 | `AI_SEARCH_ENDPOINT` | Azure AI Search endpoint (Foundry IQ) | No |
 | `AI_SEARCH_KNOWLEDGE_BASE_NAME` | Knowledge Base name | No |
+| `AI_SEARCH_API_KEY` | AI Search admin key (optional if using MI) | No |
+| `AI_SEARCH_REASONING_EFFORT` | Retrieval reasoning effort (minimal/low/medium) | No |
+| `CONTENT_SAFETY_ENDPOINT` | Azure AI Content Safety endpoint | No |
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | App Insights for distributed tracing | No |
 | `OTEL_SERVICE_NAME` | OpenTelemetry service name | No |
 | `EVAL_MODEL_DEPLOYMENT` | Model for Foundry Evaluation | No |

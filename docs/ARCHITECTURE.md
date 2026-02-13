@@ -1,6 +1,6 @@
 # Azure Architecture — Social AI Studio
 
-> **Last updated**: 2026-02-12 (verified against live Azure resources)
+> **Last updated**: 2026-02-13 (verified against live Azure resources)
 
 ## Overview
 
@@ -43,6 +43,7 @@ graph TB
             subgraph Data["Data & Persistence"]
                 Cosmos["💾 Cosmos DB<br/>cosmos-social-ai-studio<br/>social-ai-studio / conversations"]
                 VectorStore["📁 Vector Store<br/>(Foundry-managed)"]
+                AISearch["🔍 Azure AI Search<br/>search-social-ai-studio<br/>Agentic Retrieval (Foundry IQ)"]
             end
 
             subgraph Observability["Observability"]
@@ -67,6 +68,7 @@ graph TB
     Project --> GPTImg
     CA -->|Web Search tool| Bing
     CA -->|File Search tool| VectorStore
+    CA -->|Foundry IQ<br/>Agentic Retrieval| AISearch
     CA -->|MCP tool| MCP
     CA -->|Text Analysis +<br/>Prompt Shield| ContentSafety
     CA -->|CRUD| Cosmos
@@ -88,6 +90,7 @@ graph TB
 | **Cosmos DB** | `DocumentDB/databaseAccounts` | `cosmos-social-ai-studio` | Conversation history persistence |
 | **Application Insights** | `Insights/components` | `appi-social-ai-studio` | Distributed tracing + metrics |
 | **Log Analytics** | `OperationalInsights/workspaces` | `log-techpulse-prod` | Log aggregation (backing store for App Insights) |
+| **Azure AI Search** | `Search/searchServices` | `search-social-ai-studio` | Foundry IQ Agentic Retrieval (Knowledge Base + semantic reranking) |
 | **Content Safety** | `CognitiveServices/accounts` | `cs-content-safety-prod` | Text moderation + prompt shield |
 
 ## Model Deployments
@@ -172,6 +175,7 @@ User Input → Content Safety (Prompt Shield)
               ├── Web Search (Bing Grounding) → real-time trends
               ├── File Search (Vector Store) → brand guidelines
               ├── MCP Server → Microsoft Learn docs
+              ├── Foundry IQ (Azure AI Search) → deep document search
               ├── generate_content → platform-specific text
               ├── review_content → 5-axis quality scoring
               └── generate_image (gpt-image-1.5) → visuals
@@ -191,5 +195,6 @@ User Input → Content Safety (Prompt Shield)
 | AI Foundry / gpt-5.2 | Global Standard | Per 1K tokens |
 | gpt-image-1.5 | Standard | Per image |
 | Bing Search | S1 | Per 1K transactions |
+| AI Search | Basic | Fixed monthly |
 | Content Safety | S0 | Per 1K transactions |
 | Application Insights | Pay-as-you-go | Per GB ingested |
