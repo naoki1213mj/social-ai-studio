@@ -24,7 +24,7 @@ VECTOR_STORE_ID: str = os.getenv("VECTOR_STORE_ID", "")
 AI_SEARCH_ENDPOINT: str = os.getenv("AI_SEARCH_ENDPOINT", "")
 AI_SEARCH_KNOWLEDGE_BASE_NAME: str = os.getenv("AI_SEARCH_KNOWLEDGE_BASE_NAME", "")
 AI_SEARCH_API_KEY: str = os.getenv("AI_SEARCH_API_KEY", "")
-AI_SEARCH_REASONING_EFFORT: str = os.getenv("AI_SEARCH_REASONING_EFFORT", "low")
+AI_SEARCH_REASONING_EFFORT: str = os.getenv("AI_SEARCH_REASONING_EFFORT", "minimal")
 
 # MCP Server (Microsoft Learn)
 MCP_SERVER_URL: str = os.getenv("MCP_SERVER_URL", "https://learn.microsoft.com/api/mcp")

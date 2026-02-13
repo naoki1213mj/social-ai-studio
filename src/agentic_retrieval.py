@@ -28,12 +28,7 @@ from typing import Annotated, Any
 import httpx
 from agent_framework import tool
 
-from src.config import (
-    AI_SEARCH_API_KEY,
-    AI_SEARCH_ENDPOINT,
-    AI_SEARCH_KNOWLEDGE_BASE_NAME,
-    AI_SEARCH_REASONING_EFFORT,
-)
+from src.config import AI_SEARCH_API_KEY, AI_SEARCH_ENDPOINT, AI_SEARCH_KNOWLEDGE_BASE_NAME, AI_SEARCH_REASONING_EFFORT
 
 logger = logging.getLogger(__name__)
 
@@ -81,12 +76,14 @@ async def retrieve(
 
     # Build request body based on reasoning effort
     if effort == "minimal":
-        # Minimal: direct intent-based search (no LLM)
+        # Minimal: direct intent-based search (no LLM) — must use intents format
         body: dict[str, Any] = {
             "intents": [{"type": "semantic", "search": query}],
+            "retrievalReasoningEffort": {"kind": "minimal"},
+            "includeActivity": True,
         }
     else:
-        # Low/Medium: LLM-based query planning
+        # Low/Medium: LLM-based query planning — must use messages format
         body = {
             "messages": [
                 {
@@ -95,23 +92,23 @@ async def retrieve(
                 }
             ],
             "retrievalReasoningEffort": {"kind": effort},
-            "outputMode": "extractiveData",
+            "includeActivity": True,
             "maxRuntimeInSeconds": 30,
             "maxOutputSize": 6000,
         }
 
     headers: dict[str, str] = {"Content-Type": "application/json"}
-    # Prefer DefaultAzureCredential; fall back to API key if set
-    try:
-        from azure.identity import DefaultAzureCredential
+    # Prefer API key (local dev); fall back to DefaultAzureCredential (managed identity)
+    if AI_SEARCH_API_KEY:
+        headers["api-key"] = AI_SEARCH_API_KEY
+    else:
+        try:
+            from azure.identity import DefaultAzureCredential
 
-        credential = DefaultAzureCredential()
-        token = credential.get_token("https://search.azure.com/.default")
-        headers["Authorization"] = f"Bearer {token.token}"
-    except Exception as e:
-        if AI_SEARCH_API_KEY:
-            headers["api-key"] = AI_SEARCH_API_KEY
-        else:
+            credential = DefaultAzureCredential()
+            token = credential.get_token("https://search.azure.com/.default")
+            headers["Authorization"] = f"Bearer {token.token}"
+        except Exception as e:
             logger.error("Failed to get search token: %s", e)
             return {"error": f"Authentication failed: {e}"}
 
@@ -119,7 +116,7 @@ async def retrieve(
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(url, json=body, headers=headers)
 
-            if response.status_code != 200:
+            if response.status_code not in (200, 206):
                 error_text = response.text
                 logger.error(
                     "Agentic Retrieval failed: %s - %s",
@@ -152,19 +149,53 @@ def _parse_response(response: dict, effort: str) -> dict[str, Any]:
                 text = content_item.get("text", "")
                 try:
                     parsed = json.loads(text)
-                    if isinstance(parsed, dict) and "extractiveData" in parsed:
-                        chunks = parsed["extractiveData"].get("chunks", [])
-                        for chunk in chunks:
+                    if isinstance(parsed, list):
+                        # Minimal mode returns a JSON array of {ref_id, title, content}
+                        for doc in parsed:
                             sources.append(
                                 {
-                                    "content": chunk.get("content", ""),
-                                    "source": chunk.get("metadata", {}).get("url", ""),
-                                    "title": chunk.get("metadata", {}).get("title", ""),
-                                    "score": chunk.get("rerankerScore", 0),
+                                    "content": doc.get("content", ""),
+                                    "source": "",
+                                    "title": doc.get("title", ""),
+                                    "score": 0,
+                                    "ref_id": doc.get("ref_id"),
+                                }
+                            )
+                    elif isinstance(parsed, dict):
+                        if "extractiveData" in parsed:
+                            chunks = parsed["extractiveData"].get("chunks", [])
+                            for chunk in chunks:
+                                sources.append(
+                                    {
+                                        "content": chunk.get("content", ""),
+                                        "source": chunk.get("metadata", {}).get("url", ""),
+                                        "title": chunk.get("metadata", {}).get("title", ""),
+                                        "score": chunk.get("rerankerScore", 0),
+                                    }
+                                )
+                        else:
+                            # Single document object
+                            sources.append(
+                                {
+                                    "content": parsed.get("content", text),
+                                    "source": parsed.get("source", ""),
+                                    "title": parsed.get("title", ""),
+                                    "score": parsed.get("rerankerScore", 0),
                                 }
                             )
                 except (json.JSONDecodeError, TypeError):
-                    sources.append({"content": text, "source": "", "title": "", "score": 0})
+                    if text.strip():
+                        sources.append({"content": text, "source": "", "title": "", "score": 0})
+
+    # Enrich sources with reference scores
+    ref_map = {str(ref.get("id", "")): ref for ref in references}
+    for source in sources:
+        ref_id = str(source.get("ref_id", ""))
+        if ref_id in ref_map:
+            ref = ref_map[ref_id]
+            source["score"] = ref.get("rerankerScore", source.get("score", 0))
+            if not source.get("title") and ref.get("title"):
+                source["title"] = ref["title"]
 
     # Parse activity summary
     activity_summary = []
