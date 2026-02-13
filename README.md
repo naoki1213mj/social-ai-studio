@@ -20,10 +20,11 @@ An AI-powered content creation pipeline that assists marketing and communication
 
 Single reasoning agent (gpt-5.2) × 7 tools × 3-phase thinking pipeline × production-grade observability.
 
-## 🎬 Demo Video
+## 🎬 Demo
 
-<!-- TODO: Add demo video link after recording -->
-Coming soon — 3 min walkthrough of the full reasoning pipeline.
+![Full Pipeline Demo](docs/demo-full-pipeline.png)
+
+*End-to-end content generation pipeline: topic input → AI Settings → 3-phase reasoning (CoT → ReAct → Self-Reflection) → 7 tool executions → A/B content comparison → variant selection → platform-specific content cards (LinkedIn / X) with AI-generated images → quality review (8.7/10) → HITL actions → export.*
 
 ## ✨ Key Features at a Glance
 
