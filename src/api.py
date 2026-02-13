@@ -32,6 +32,7 @@ from src.content_safety import analyze_safety, check_prompt_shield, format_safet
 from src.content_safety import is_configured as safety_configured  # noqa: E402
 from src.database import delete_conversation, get_conversation, list_conversations, save_conversation  # noqa: E402
 from src.models import ChatRequest
+from src.tools import generate_image, pop_pending_images
 
 # Configure logging
 logging.basicConfig(
@@ -94,6 +95,57 @@ _SERVE_STATIC = os.getenv("SERVE_STATIC", "false").lower() == "true"
 TOOL_EVENT_PATTERN = re.compile(r"__TOOL_EVENT__(.*?)__END_TOOL_EVENT__")
 REASONING_PATTERN = re.compile(rf"{re.escape(REASONING_START)}([\s\S]*?){re.escape(REASONING_END)}")
 IMAGE_DATA_PATTERN = re.compile(rf"{re.escape(IMAGE_DATA_START)}([\s\S]*?){re.escape(IMAGE_DATA_END)}")
+
+
+def _extract_image_prompts(content: str) -> dict[str, str]:
+    """Extract platform -> image_prompt from assistant JSON output.
+
+    Supports both normal mode and A/B mode output structures.
+    """
+    if not content:
+        return {}
+
+    # Prefer fenced JSON, fallback to whole content
+    fence_match = re.search(r"```json\s*\n?([\s\S]*?)```", content)
+    json_str = fence_match.group(1).strip() if fence_match else content.strip()
+
+    if not json_str.startswith("{"):
+        return {}
+
+    try:
+        parsed = json.loads(json_str)
+    except Exception:
+        return {}
+
+    prompts: dict[str, str] = {}
+
+    # Normal mode
+    if isinstance(parsed.get("contents"), list):
+        for item in parsed["contents"]:
+            if not isinstance(item, dict):
+                continue
+            platform = str(item.get("platform", "")).lower().strip()
+            prompt = str(item.get("image_prompt", "")).strip()
+            if platform and prompt:
+                prompts[platform] = prompt
+
+    # A/B mode (keep first available prompt per platform)
+    for variant_key in ("variant_a", "variant_b"):
+        variant = parsed.get(variant_key)
+        if not isinstance(variant, dict):
+            continue
+        contents = variant.get("contents")
+        if not isinstance(contents, list):
+            continue
+        for item in contents:
+            if not isinstance(item, dict):
+                continue
+            platform = str(item.get("platform", "")).lower().strip()
+            prompt = str(item.get("image_prompt", "")).strip()
+            if platform and prompt and platform not in prompts:
+                prompts[platform] = prompt
+
+    return prompts
 
 
 @app.get("/api/health")
@@ -180,6 +232,7 @@ async def chat(request: Request) -> StreamingResponse:
     async def generate():
         """SSE event generator."""
         assistant_content = ""
+        emitted_image_platforms: set[str] = set()
         _tracer = get_tracer()  # noqa: F841 — kept for future span creation
 
         try:
@@ -209,9 +262,12 @@ async def chat(request: Request) -> StreamingResponse:
                 if image_match:
                     try:
                         image_data = json.loads(image_match.group(1))
+                        platform = str(image_data.get("platform", "")).lower().strip()
+                        if platform:
+                            emitted_image_platforms.add(platform)
                         image_event = {
                             "type": "image",
-                            "platform": image_data.get("platform", ""),
+                            "platform": platform,
                             "image_base64": image_data.get("image_base64", ""),
                         }
                         yield json.dumps(image_event, ensure_ascii=False) + "\n\n"
@@ -263,6 +319,39 @@ async def chat(request: Request) -> StreamingResponse:
                     title=title,
                     messages=history,
                 )
+
+            # ---- Image fallback: generate missing visuals from image_prompt ----
+            required_image_platforms = {
+                p.lower().strip() for p in (chat_req.platforms or []) if p.lower().strip() in {"linkedin", "instagram"}
+            }
+            missing_platforms = required_image_platforms - emitted_image_platforms
+
+            if assistant_content and missing_platforms:
+                image_prompts = _extract_image_prompts(assistant_content)
+                for platform in sorted(missing_platforms):
+                    prompt = image_prompts.get(platform, "")
+                    if not prompt:
+                        continue
+                    try:
+                        # Run the same tool used by the agent as a fallback path
+                        await generate_image(prompt=prompt, platform=platform)
+                        generated_images = pop_pending_images()
+                        image_b64 = generated_images.get(platform, "")
+                        if image_b64:
+                            emitted_image_platforms.add(platform)
+                            fallback_event = {
+                                "type": "image",
+                                "platform": platform,
+                                "image_base64": image_b64,
+                            }
+                            yield json.dumps(fallback_event, ensure_ascii=False) + "\n\n"
+                            logger.info("Image fallback generated for platform=%s", platform)
+                    except Exception as fallback_error:
+                        logger.warning(
+                            "Image fallback failed for platform=%s: %s",
+                            platform,
+                            fallback_error,
+                        )
 
             # ---- Content Safety: analyze generated output ----
             safety_result = (

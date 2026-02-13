@@ -405,7 +405,7 @@ hackfest-techconnect2026/
 │   │       └── i18n.ts            # 翻訳データ (EN/JA/KO/ZH/ES)
 │   ├── vite.config.ts
 │   └── package.json
-├── tests/                     # 120 ユニットテスト (pytest + pytest-asyncio)
+├── tests/                     # 123 ユニットテスト (pytest + pytest-asyncio)
 ├── infra/
 │   ├── main.bicep             # Azure インフラ (ACR + Container Apps)
 │   └── main.parameters.json
@@ -454,7 +454,7 @@ hackfest-techconnect2026/
 
 | ワークフロー | ファイル | トリガー | ジョブ |
 |---|---|---|---|
-| **CI** | `ci.yml` | push / PR to main | Ruff lint → pytest (120 tests) → Frontend tsc + build |
+| **CI** | `ci.yml` | push / PR to main | Ruff lint → pytest (123 tests) → Frontend tsc + build |
 | **Deploy** | `deploy.yml` | push to main (CI 通過後) | ACR ビルド → Container App 更新 → ヘルスチェック |
 | **Security** | `security.yml` | push / PR / 毎週月曜 | Trivy スキャン → Gitleaks → 依存関係監査 |
 
@@ -465,7 +465,7 @@ git push (main)
     │
     ├──→ ci.yml
     │     ├── 🔍 Ruff lint (check + format)
-    │     ├── 🧪 pytest (120 tests)
+    │     ├── 🧪 pytest (123 tests)
     │     └── 🎨 Frontend tsc --noEmit + build
     │
     ├──→ deploy.yml (ci.yml 通過後)

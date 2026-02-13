@@ -3,7 +3,7 @@
 ![Python 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python)
 ![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript)
-![Tests](https://img.shields.io/badge/tests-120%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-123%20passed-brightgreen)
 ![CI](https://github.com/naoki1213mj/social-ai-studio/actions/workflows/ci.yml/badge.svg)
 ![Deploy](https://github.com/naoki1213mj/social-ai-studio/actions/workflows/deploy.yml/badge.svg)
 ![Security](https://github.com/naoki1213mj/social-ai-studio/actions/workflows/security.yml/badge.svg)
@@ -16,12 +16,14 @@
 
 An AI-powered content creation pipeline that assists marketing and communication teams in creating platform-optimized social media content for LinkedIn, X (Twitter), and Instagram — adaptable to any brand or industry.
 
-**Single reasoning agent (gpt-5.2) × 7 tools × 3-phase thinking pipeline × production-grade observability**
+## 🚀 Snapshot
+
+Single reasoning agent (gpt-5.2) × 7 tools × 3-phase thinking pipeline × production-grade observability.
 
 ## 🎬 Demo Video
 
 <!-- TODO: Add demo video link after recording -->
-_Coming soon — 3 min walkthrough of the full reasoning pipeline_
+Coming soon — 3 min walkthrough of the full reasoning pipeline.
 
 ## ✨ Key Features at a Glance
 
@@ -33,8 +35,8 @@ _Coming soon — 3 min walkthrough of the full reasoning pipeline_
 | 👤 **HITL Workflow** | Approve ✅ / Edit ✏️ / Refine 🔄 per platform card |
 | 📊 **Quality Scoring** | 5-axis radar chart + Foundry Evaluation (Relevance, Coherence, Fluency, Groundedness) |
 | 🔍 **Observability** | OpenTelemetry → Azure Application Insights → Foundry Tracing |
-| �️ **Content Safety** | Azure AI Content Safety (text analysis + prompt shield) with real-time badge |
-| �🖼️ **Image Generation** | gpt-image-1.5 creates platform-optimized visuals |
+| 🛡️ **Content Safety** | Azure AI Content Safety (text analysis + prompt shield) with real-time badge |
+| 🖼️ **Image Generation** | gpt-image-1.5 creates platform-optimized visuals |
 | 💾 **Persistence** | Cosmos DB conversation history with in-memory fallback |
 | 🌐 **5-Language i18n** | EN / JA / KO / ZH / ES with flag-based selector |
 | 🌙 **Dark / Light Mode** | System-preference-aware theme switching |
@@ -42,7 +44,7 @@ _Coming soon — 3 min walkthrough of the full reasoning pipeline_
 | 🚀 **One-Command Deploy** | `azd up` → Azure Container Apps |
 | ⚙️ **CI/CD Pipeline** | GitHub Actions: Lint → Test → Build → Deploy → Health Check |
 | 🛡️ **Security Scanning** | Trivy vulnerability scan + Gitleaks secret detection + dependency audit |
-| ✅ **120 Unit Tests** | Comprehensive backend test suite |
+| ✅ **123 Unit Tests** | Comprehensive backend test suite |
 
 ## 🏗️ Architecture
 
@@ -256,7 +258,7 @@ Toggle A/B mode in AI Settings to generate **two content variants with different
 | **Deployment** | Azure Container Apps via azd (multi-stage Docker build) |
 | **CI/CD** | GitHub Actions (CI + Deploy + Security Scan) |
 | **Package Mgr** | uv (Python), npm (Node.js) |
-| **Testing** | pytest + pytest-asyncio (120 tests) |
+| **Testing** | pytest + pytest-asyncio (123 tests) |
 
 ## 🚀 Quick Start
 
@@ -308,7 +310,7 @@ This builds a multi-stage Docker image (Node.js frontend → Python backend) and
 Push to `main` triggers the full pipeline automatically:
 
 ```
-git push → Lint (Ruff) → Test (120 pytest) → Build (ACR) → Deploy (Container Apps) → Health Check
+git push → Lint (Ruff) → Test (123 pytest) → Build (ACR) → Deploy (Container Apps) → Health Check
 ```
 
 | Workflow | Trigger | Description |
@@ -376,7 +378,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full Azure architecture
 │   │   └── lib/              # api.ts (SSE client), i18n.ts (5 languages)
 │   ├── vite.config.ts
 │   └── package.json
-├── tests/                    # 120 unit tests (pytest + pytest-asyncio)
+├── tests/                    # 123 unit tests (pytest + pytest-asyncio)
 ├── infra/
 │   ├── main.bicep            # Azure infrastructure (ACR + Container Apps)
 │   └── main.parameters.json
@@ -413,6 +415,7 @@ Returns SSE stream:
 - `{"type": "reasoning_update", "reasoning": "..."}` — Thinking tokens
 - `__TOOL_EVENT__...__END_TOOL_EVENT__` — Tool usage events
 - `{"choices": [...], "thread_id": "..."}` — Content chunks
+- `{"type": "safety", "safety": {...}}` — Content Safety analysis result
 - `{"type": "done"}` — Completion signal
 
 ### `POST /api/evaluate` — Content Quality Evaluation
@@ -426,6 +429,17 @@ Returns SSE stream:
 ```
 
 Returns: `{"relevance": 4.5, "coherence": 5.0, "fluency": 4.0, "groundedness": 4.5}`
+
+### `POST /api/safety` — Content Safety Analysis
+
+```json
+{
+  "text": "Text to analyze...",
+  "check_prompt_injection": true
+}
+```
+
+Returns: `{"safe": true, "categories": {...}, "prompt_shield": {...}, "summary": "..."}`
 
 ### `GET /api/health`
 
@@ -447,7 +461,7 @@ Returns: `{"relevance": 4.5, "coherence": 5.0, "fluency": 4.0, "groundedness": 4
 - **Reasoning Phase Badges** — Live CoT → ReAct → Self-Reflection indicators with pulse animation
 - **Tool Usage Pills** — Animated gradient-glow badges (Web Search, File Search, MCP, Content Gen, etc.)
 - **Quality Radar Chart** — 5-axis recharts visualization with overall score
-- **Content Safety Badge** — Visual safety indicator
+- **Content Safety Badge** — Dynamic badge based on Azure AI Content Safety analysis
 - **Processing Metrics** — Post-generation stats bar (reasoning chars, tools used, output chars)
 - **A/B Compare Cards** — Side-by-side variants with mini radar charts and winner badge
 
@@ -477,12 +491,12 @@ Returns: `{"relevance": 4.5, "coherence": 5.0, "fluency": 4.0, "groundedness": 4
 | **Reasoning & Multi-step Thinking** | 25% | 3-phase pipeline (CoT → ReAct → Self-Reflection), live phase badges, controllable depth (low/medium/high), OpenTelemetry tracing of reasoning pipeline with per-tool spans |
 | **Creativity & Originality** | 20% | HITL workflow (approve/edit/refine), A/B content comparison with strategy variants, reasoning phase visualization, GPT Image generation, MCP Server integration, dual evaluation system (self-review + Foundry metrics) |
 | **User Experience & Presentation** | 15% | Polished glassmorphism UI with animations, dark/light mode, 5-language i18n, skeleton loading, suggested questions, keyboard shortcuts, conversation history, content export (Markdown + JSON) |
-| **Technical Implementation** | 15% | agent-framework-core SDK, SSE streaming with OTel distributed tracing, Cosmos DB persistence, Azure Container Apps deployment via azd, GitHub Actions CI/CD (lint → test → build → deploy → security scan), 120 unit tests, OpenTelemetry → Application Insights pipeline, Foundry Evaluation SDK integration |
+| **Technical Implementation** | 15% | agent-framework-core SDK, SSE streaming with OTel distributed tracing, Cosmos DB persistence, Azure Container Apps deployment via azd, GitHub Actions CI/CD (lint → test → build → deploy → security scan), 123 unit tests, OpenTelemetry → Application Insights pipeline, Foundry Evaluation SDK integration |
 
 ## 🧪 Testing
 
 ```bash
-# Run all 120 tests
+# Run all 123 tests
 uv run python -m pytest tests/ -q
 
 # With verbose output

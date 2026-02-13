@@ -121,7 +121,7 @@ graph LR
 
 | Workflow | Trigger | Jobs |
 |----------|---------|------|
-| **CI (ci.yml)** | push / PR to main | Ruff lint → pytest (120 tests) → Frontend tsc + build |
+| **CI (ci.yml)** | push / PR to main | Ruff lint → pytest (123 tests) → Frontend tsc + build |
 | **Deploy (deploy.yml)** | push to main (after CI) | ACR build → Container App update → health check |
 | **Security (security.yml)** | push / PR / weekly | Trivy scan → Gitleaks secret detection → dependency audit |
 

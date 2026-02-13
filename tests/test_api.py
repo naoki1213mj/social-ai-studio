@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from src.api import REASONING_PATTERN, TOOL_EVENT_PATTERN, app
+from src.api import REASONING_PATTERN, TOOL_EVENT_PATTERN, _extract_image_prompts, app
 
 
 @pytest.fixture
@@ -145,3 +145,94 @@ class TestRegexPatterns:
         assert match is not None
         assert "Step 1" in match.group(1)
         assert "Step 3" in match.group(1)
+
+
+class TestImageFallback:
+    """Test image fallback behavior in API layer."""
+
+    def test_extract_image_prompts_normal(self):
+        content = """```json
+{
+    "contents": [
+        {"platform": "linkedin", "image_prompt": "professional office scene"},
+        {"platform": "instagram", "image_prompt": "vibrant geometric design"}
+    ]
+}
+```"""
+        prompts = _extract_image_prompts(content)
+        assert prompts["linkedin"] == "professional office scene"
+        assert prompts["instagram"] == "vibrant geometric design"
+
+    def test_extract_image_prompts_ab(self):
+        content = """```json
+{
+    "mode": "ab",
+    "variant_a": {
+        "contents": [
+            {"platform": "linkedin", "image_prompt": "A prompt"}
+        ]
+    },
+    "variant_b": {
+        "contents": [
+            {"platform": "instagram", "image_prompt": "B prompt"}
+        ]
+    }
+}
+```"""
+        prompts = _extract_image_prompts(content)
+        assert prompts["linkedin"] == "A prompt"
+        assert prompts["instagram"] == "B prompt"
+
+    @patch("src.api.pop_pending_images")
+    @patch("src.api.generate_image")
+    @patch("src.api.run_agent_stream")
+    def test_chat_emits_fallback_image_event(self, mock_stream, mock_generate_image, mock_pop_pending_images, client):
+        async def fake_stream(*args, **kwargs):
+            yield """```json
+{
+    \"contents\": [
+        {
+            \"platform\": \"linkedin\",
+            \"body\": \"test\",
+            \"hashtags\": [],
+            \"call_to_action\": \"\",
+            \"posting_time\": \"\",
+            \"image_prompt\": \"professional office scene\"
+        }
+    ],
+    \"review\": {
+        \"overall_score\": 8,
+        \"scores\": {
+            \"brand_alignment\": 8,
+            \"audience_relevance\": 8,
+            \"engagement_potential\": 8,
+            \"clarity\": 8,
+            \"platform_optimization\": 8
+        },
+        \"feedback\": [],
+        \"improvements_made\": []
+    },
+    \"sources_used\": []
+}
+```"""
+
+        async def fake_generate_image(*args, **kwargs):
+            return '{"status":"generated"}'
+
+        mock_stream.return_value = fake_stream()
+        mock_generate_image.side_effect = fake_generate_image
+        mock_pop_pending_images.return_value = {"linkedin": "abc123"}
+
+        body = {
+            "message": "test",
+            "platforms": ["linkedin"],
+            "content_type": "tech_insight",
+            "language": "ja",
+            "reasoning_effort": "low",
+            "reasoning_summary": "auto",
+            "ab_mode": False,
+        }
+        response = client.post("/api/chat", json=body)
+        assert response.status_code == 200
+        assert '"type": "image"' in response.text or '"type":"image"' in response.text
+        assert '"platform": "linkedin"' in response.text or '"platform":"linkedin"' in response.text

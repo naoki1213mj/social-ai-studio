@@ -171,7 +171,7 @@ The single agent autonomously progresses through all phases.
 
 ### CI/CD Pipeline (GitHub Actions)
 
-- **CI** (`ci.yml`): Ruff lint + pytest (120 tests) + Frontend tsc + build — triggered on push/PR to main
+- **CI** (`ci.yml`): Ruff lint + pytest (123 tests) + Frontend tsc + build — triggered on push/PR to main
 - **Deploy** (`deploy.yml`): CI gate → ACR build (commit SHA + latest tags) → Container App update → health check — triggered on push to main
 - **Security** (`security.yml`): Trivy filesystem scan → Gitleaks secret detection → npm audit + pip-audit — triggered on push/PR/weekly
 - Deploy uses **OIDC Workload Identity Federation** via `azure/login@v2` with GitHub Variables (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`)
