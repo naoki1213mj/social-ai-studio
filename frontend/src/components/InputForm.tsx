@@ -52,7 +52,7 @@ export default function InputForm({
   const [message, setMessage] = useState("");
   const [platforms, setPlatforms] = useState<string[]>(["linkedin", "x"]);
   const [contentType, setContentType] = useState("product_launch");
-  const [language, setLanguage] = useState("ja");
+  const [language, setLanguage] = useState("en");
   const [reasoningEffort, setReasoningEffort] = useState("medium");
   const [reasoningSummary, setReasoningSummary] = useState("auto");
   const [abMode, setAbMode] = useState(false);
@@ -168,7 +168,7 @@ export default function InputForm({
           <select
             value={contentType}
             onChange={(e) => setContentType(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-200/60 dark:border-gray-700/60 rounded-xl bg-white/50 dark:bg-gray-800/50 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+            className="w-full px-3 py-2 border border-gray-200/60 dark:border-gray-700/60 rounded-xl bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all [&>option]:bg-white [&>option]:dark:bg-gray-800 [&>option]:text-gray-900 [&>option]:dark:text-gray-100"
           >
             {CONTENT_TYPES.map((ct) => (
               <option key={ct} value={ct}>
@@ -184,7 +184,7 @@ export default function InputForm({
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-200/60 dark:border-gray-700/60 rounded-xl bg-white/50 dark:bg-gray-800/50 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+            className="w-full px-3 py-2 border border-gray-200/60 dark:border-gray-700/60 rounded-xl bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all [&>option]:bg-white [&>option]:dark:bg-gray-800 [&>option]:text-gray-900 [&>option]:dark:text-gray-100"
           >
             <option value="en">{t("language.en")}</option>
             <option value="ja">{t("language.ja")}</option>
