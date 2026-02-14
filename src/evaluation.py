@@ -47,11 +47,7 @@ async def evaluate_content(
     results: dict[str, float | str] = {}
 
     try:
-        from azure.ai.evaluation import (
-            CoherenceEvaluator,
-            FluencyEvaluator,
-            RelevanceEvaluator,
-        )
+        from azure.ai.evaluation import CoherenceEvaluator, FluencyEvaluator, RelevanceEvaluator
 
         # Model config for AI-assisted evaluators
         # Uses the same project endpoint as the agent
@@ -61,27 +57,31 @@ async def evaluate_content(
             "api_version": "2025-05-15-preview",
         }
 
-        # Use DefaultAzureCredential for auth
+        # Use DefaultAzureCredential with azure_ad_token_provider
+        # NOTE: api_key sends via 'api-key' header, but AAD tokens must go via
+        # 'Authorization: Bearer' header → use azure_ad_token_provider instead.
         try:
-            from azure.identity import DefaultAzureCredential
+            from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
             credential = DefaultAzureCredential()
-            token = credential.get_token("https://cognitiveservices.azure.com/.default")
-            model_config["api_key"] = token.token
+            token_provider = get_bearer_token_provider(credential, "https://cognitiveservices.azure.com/.default")
+            model_config["azure_ad_token_provider"] = token_provider
         except Exception as e:
             logger.warning("Failed to get credential for evaluation: %s", e)
-            return {"error": str(e)}
+            return {"error": f"Authentication failed: {e}"}
 
-        # Run evaluators
+        # Run evaluators — collect errors per metric for diagnostics
         evaluators = {
             "relevance": RelevanceEvaluator(model_config=model_config),
             "coherence": CoherenceEvaluator(model_config=model_config),
             "fluency": FluencyEvaluator(model_config=model_config),
         }
 
+        eval_errors: list[str] = []
         for name, evaluator in evaluators.items():
             try:
                 result = evaluator(query=query, response=response)
+                logger.info("Evaluator '%s' raw result: %s", name, result)
                 score = result.get(name)
                 reason = result.get(f"{name}_reason", "")
                 if score is not None:
@@ -89,8 +89,16 @@ async def evaluate_content(
                 if reason:
                     results[f"{name}_reason"] = reason
             except Exception as e:
-                logger.warning("Evaluator '%s' failed: %s", name, e)
+                logger.warning("Evaluator '%s' failed: %s", name, e, exc_info=True)
                 results[name] = -1
+                eval_errors.append(f"{name}: {e}")
+
+        # If ALL evaluators failed, return error with details
+        core_metrics = ["relevance", "coherence", "fluency"]
+        if all(results.get(m) == -1 for m in core_metrics):
+            error_detail = "; ".join(eval_errors) if eval_errors else "All evaluators returned -1"
+            logger.error("All evaluators failed: %s", error_detail)
+            return {"error": f"All evaluators failed: {error_detail}"}
 
         # Groundedness requires context
         if context:

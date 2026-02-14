@@ -591,12 +591,14 @@ export default function ContentCards({ data, t, onRefine, safetyResult, query }:
               { key: "fluency", label: t("eval.fluency"), score: evalResult.fluency, reason: evalResult.fluency_reason },
               ...(evalResult.groundedness != null ? [{ key: "groundedness", label: t("eval.groundedness"), score: evalResult.groundedness, reason: evalResult.groundedness_reason }] : []),
             ] as const).map((item) => {
-              const rawScore = Number(item.score) || 0;
-              const score = Math.max(0, Math.min(5, rawScore));
+              const rawScore = Number(item.score);
+              const failed = isNaN(rawScore) || rawScore < 0;
+              const score = failed ? 0 : Math.max(0, Math.min(5, rawScore));
               const pct = (score / 5) * 100;
-              const color = score >= 4 ? "bg-green-500" : score >= 3 ? "bg-yellow-500" : "bg-red-500";
+              const color = failed ? "bg-gray-400" : score >= 4 ? "bg-green-500" : score >= 3 ? "bg-yellow-500" : "bg-red-500";
               const filled = Math.max(0, Math.min(5, Math.round(score)));
-              const stars = "★".repeat(filled) + "☆".repeat(5 - filled);
+              const stars = failed ? "—" : "★".repeat(filled) + "☆".repeat(5 - filled);
+              const displayScore = failed ? "N/A" : String(score);
               return (
                 <div key={item.key} className="group">
                   <div className="flex items-center gap-2 text-xs">
@@ -605,7 +607,7 @@ export default function ContentCards({ data, t, onRefine, safetyResult, query }:
                       <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
                     </div>
                     <span className="w-20 text-right text-amber-500 dark:text-amber-400 text-[11px] tracking-wider">{stars}</span>
-                    <span className="w-6 text-right font-bold text-gray-700 dark:text-gray-300">{score}</span>
+                    <span className={`w-6 text-right font-bold ${failed ? "text-gray-400 dark:text-gray-500 text-[10px]" : "text-gray-700 dark:text-gray-300"}`}>{displayScore}</span>
                   </div>
                   {item.reason && (
                     <p className="text-[10px] text-gray-400 dark:text-gray-500 pl-28 ml-2 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity line-clamp-2">
