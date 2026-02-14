@@ -3,14 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from src.models import (
-    ChatRequest,
-    ContentItem,
-    ContentOutput,
-    Review,
-    ReviewScores,
-    ToolEvent,
-)
+from src.models import ChatRequest, ContentItem, ContentOutput, Review, ReviewScores, ToolEvent
 
 
 class TestChatRequest:
