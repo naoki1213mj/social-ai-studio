@@ -141,6 +141,7 @@ and infer the best strategy from the description.
 | `product_launch` | Announcement-focused, build excitement | Feature highlights, value proposition, availability |
 | `thought_leadership` | Authoritative, insightful | Industry trends, expert perspective, data-backed opinions |
 | `event_promotion` | Urgency and FOMO, community | Date/venue, speakers, registration CTA, countdown |
+| `event_recap` | Reflective, authentic, insightful | Key takeaways, personal learnings, networking highlights, gratitude |
 | `company_culture` | Authentic, humanistic storytelling | Team stories, values, behind-the-scenes moments |
 | `industry_news` | Timely commentary, add unique perspective | Breaking news, analysis, implications for the industry |
 | `news_commentary` | Opinionated analysis of current events | Hot takes, balanced view, expert context, timeliness |
@@ -239,12 +240,47 @@ IMPORTANT for Bilingual mode:
 """.strip()
 
 
-def get_system_prompt(*, ab_mode: bool = False, bilingual: bool = False) -> str:
+_BILINGUAL_COMBINED_ADDENDUM = """
+
+# BILINGUAL COMBINED MODE (ACTIVE — EN+JA in one post)
+You MUST generate content where BOTH English and Japanese text appear within a SINGLE post.
+This is NOT separate posts — it is ONE unified post per platform with both languages.
+
+Format each post with the Japanese text FIRST, followed by a blank line separator, then the English text.
+This mirrors how bilingual professionals naturally write on social media.
+
+Example structure for a post body:
+```
+[Japanese text here — natural, fluent Japanese]
+
+[English text here — natural, fluent English]
+```
+
+IMPORTANT for Bilingual Combined mode:
+- Each platform gets ONE content object (not two) with both languages in the body
+- Do NOT add a "language" field — the post itself is bilingual
+- Japanese section comes FIRST, English section SECOND, separated by a blank line
+- Do NOT simply translate — each section should feel naturally written in that language
+- The core message should be the SAME, but tone and expression adapted per language
+- Hashtags: mix of English global tags and Japanese tags in a single hashtags array
+- Character counts: account for BOTH sections within the platform's limits
+  - LinkedIn: total body ≤ 3000 chars (both languages combined)
+  - X/Twitter: total body ≤ 280 chars — keep both sections very concise, or use only key phrases
+  - Instagram: total body ≤ 2200 chars (both languages combined)
+- Image prompts can be the same as normal (no language-specific variation needed)
+- For X/Twitter, if 280 chars is too tight for two languages, prioritize the primary message
+  and use minimal bilingual framing (e.g., short JP summary + EN detail or vice versa)
+- review_content should evaluate the combined bilingual output as a whole
+""".strip()
+
+
+def get_system_prompt(*, ab_mode: bool = False, bilingual: bool = False, bilingual_style: str = "parallel") -> str:
     """Build the system prompt, optionally with A/B comparison or bilingual instructions.
 
     Args:
         ab_mode: If True, append A/B comparison mode instructions.
-        bilingual: If True, append bilingual (EN + JA) mode instructions.
+        bilingual: If True, append bilingual mode instructions.
+        bilingual_style: "parallel" (separate posts) or "combined" (EN+JA in one post).
 
     Returns:
         The complete system prompt string.
@@ -253,7 +289,10 @@ def get_system_prompt(*, ab_mode: bool = False, bilingual: bool = False) -> str:
     if ab_mode:
         prompt += "\n\n" + _AB_MODE_ADDENDUM
     if bilingual:
-        prompt += "\n\n" + _BILINGUAL_ADDENDUM
+        if bilingual_style == "combined":
+            prompt += "\n\n" + _BILINGUAL_COMBINED_ADDENDUM
+        else:
+            prompt += "\n\n" + _BILINGUAL_ADDENDUM
     return prompt
 
 

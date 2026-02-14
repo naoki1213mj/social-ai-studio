@@ -38,6 +38,10 @@ class ChatRequest(BaseModel):
         default=False,
         description="Bilingual mode: generate content in both English and Japanese for each platform",
     )
+    bilingual_style: str = Field(
+        default="parallel",
+        description="Bilingual style: parallel (separate posts per language) or combined (EN+JA in one post)",
+    )
 
 
 class ToolEvent(BaseModel):

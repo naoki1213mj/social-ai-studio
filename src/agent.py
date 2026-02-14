@@ -139,6 +139,7 @@ async def run_agent_stream(
     reasoning_summary: str = "auto",
     ab_mode: bool = False,
     bilingual: bool = False,
+    bilingual_style: str = "parallel",
 ) -> AsyncIterator[str]:
     """Execute the agent and yield SSE-formatted events.
 
@@ -157,6 +158,7 @@ async def run_agent_stream(
         reasoning_summary: Thinking display mode (off/auto/concise/detailed).
         ab_mode: If True, generate two content variants for A/B comparison.
         bilingual: If True, generate content in both English and Japanese.
+        bilingual_style: "parallel" (separate posts) or "combined" (EN+JA in one post).
 
     Yields:
         SSE-formatted strings for each event type.
@@ -225,7 +227,7 @@ async def run_agent_stream(
         default_options["reasoning"] = reasoning_opts
 
     # Create agent with all tools (hosted + custom @tool)
-    system_prompt = get_system_prompt(ab_mode=ab_mode, bilingual=bilingual)
+    system_prompt = get_system_prompt(ab_mode=ab_mode, bilingual=bilingual, bilingual_style=bilingual_style)
     agent = client.as_agent(
         name="social_ai_studio_agent",
         instructions=system_prompt,
@@ -249,6 +251,7 @@ async def run_agent_stream(
             "language": language,
             "ab_mode": ab_mode,
             "bilingual": bilingual,
+            "bilingual_style": bilingual_style,
             "tools.count": len(tools),
         },
     )

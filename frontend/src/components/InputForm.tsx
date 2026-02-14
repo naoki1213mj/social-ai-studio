@@ -13,6 +13,7 @@ interface InputFormProps {
     reasoningSummary: string;
     abMode: boolean;
     bilingual: boolean;
+    bilingualStyle: string;
   }) => void;
   onStop?: () => void;
   /** Allow external topic injection (from SuggestedQuestions) */
@@ -25,6 +26,7 @@ const CONTENT_TYPES = [
   "product_launch",
   "thought_leadership",
   "event_promotion",
+  "event_recap",
   "company_culture",
   "tech_insight",
   "news_commentary",
@@ -69,6 +71,7 @@ export default function InputForm({
   const [reasoningSummary, setReasoningSummary] = useState("auto");
   const [abMode, setAbMode] = useState(false);
   const [bilingual, setBilingual] = useState(false);
+  const [bilingualStyle, setBilingualStyle] = useState("parallel");
   const [showSettings, setShowSettings] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -99,13 +102,14 @@ export default function InputForm({
             reasoningSummary,
             abMode,
             bilingual,
+            bilingualStyle,
           });
         }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [loading, message, platforms, contentType, customContentType, language, reasoningEffort, reasoningSummary, abMode, bilingual, onSubmit, onStop]);
+  }, [loading, message, platforms, contentType, customContentType, language, reasoningEffort, reasoningSummary, abMode, bilingual, bilingualStyle, onSubmit, onStop]);
 
   // Handle external topic injection
   useEffect(() => {
@@ -133,6 +137,7 @@ export default function InputForm({
       reasoningSummary,
       abMode,
       bilingual,
+      bilingualStyle,
     });
   };
 
@@ -238,7 +243,7 @@ export default function InputForm({
             <span className="text-xs text-gray-400 dark:text-gray-500">
               🧠 {reasoningEffort} · {reasoningSummary}
               {abMode && " · A/B"}
-              {bilingual && " · 🌐 EN+JA"}
+              {bilingual && ` · 🌐 ${bilingualStyle === "combined" ? "EN+JA併記" : "EN+JA"}`}
             </span>
           </div>
           {showSettings ? (
@@ -347,8 +352,39 @@ export default function InputForm({
                   <div className="w-9 h-5 bg-gray-200 dark:bg-gray-700 peer-focus:ring-2 peer-focus:ring-emerald-500/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-emerald-500 peer-checked:to-teal-500" />
                 </div>
               </label>
+              {bilingual && (
+                <div className="flex gap-1.5 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setBilingualStyle("parallel")}
+                    className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      bilingualStyle === "parallel"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    {t("settings.bilingual.parallel") || "Parallel"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBilingualStyle("combined")}
+                    className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      bilingualStyle === "combined"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    {t("settings.bilingual.combined") || "Combined"}
+                  </button>
+                </div>
+              )}
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                {t("settings.bilingual.description") || "Generate content in both English and Japanese for each platform"}
+                {bilingual
+                  ? (bilingualStyle === "combined"
+                    ? (t("settings.bilingual.combined.description") || "EN + JA text in a single post")
+                    : (t("settings.bilingual.parallel.description") || "Separate posts for each language"))
+                  : (t("settings.bilingual.description") || "Generate content in both English and Japanese for each platform")
+                }
               </p>
             </div>
           </div>

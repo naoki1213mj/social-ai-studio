@@ -79,6 +79,7 @@ export default function App() {
       reasoningSummary: string;
       abMode: boolean;
       bilingual: boolean;
+      bilingualStyle: string;
     }) => {
       // Save for retry
       setLastSubmitData(data);
@@ -109,6 +110,7 @@ export default function App() {
             reasoning_summary: data.reasoningSummary,
             ab_mode: data.abMode,
             bilingual: data.bilingual,
+            bilingual_style: data.bilingualStyle,
           },
           controller.signal,
         )) {

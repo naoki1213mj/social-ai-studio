@@ -143,6 +143,10 @@ const translations: Record<Locale, Record<string, string>> = {
     // Bilingual
     "settings.bilingual": "Bilingual (EN + JA)",
     "settings.bilingual.description": "Generate content in both English and Japanese for each platform",
+    "settings.bilingual.parallel": "Parallel",
+    "settings.bilingual.parallel.description": "Separate posts for each language",
+    "settings.bilingual.combined": "Combined",
+    "settings.bilingual.combined.description": "EN + JA text in a single post",
 
     // Phase Stepper
     "phase.cot": "Strategic Analysis",
@@ -159,6 +163,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "contentType.personal_branding": "Personal Branding",
     "contentType.recruitment": "Recruitment / Hiring",
     "contentType.seasonal": "Seasonal / Holiday",
+    "contentType.event_recap": "Event Recap",
     "contentType.custom": "Custom (free text)",
 
     // Theme / i18n
@@ -307,6 +312,10 @@ const translations: Record<Locale, Record<string, string>> = {
     // バイリンガル
     "settings.bilingual": "バイリンガル (EN + JA)",
     "settings.bilingual.description": "各プラットフォームのコンテンツを英語と日本語の両方で生成",
+    "settings.bilingual.parallel": "並列",
+    "settings.bilingual.parallel.description": "言語ごとに個別投稿を生成",
+    "settings.bilingual.combined": "併記",
+    "settings.bilingual.combined.description": "1つの投稿にEN+JAを併記",
 
     // フェーズステッパー
     "phase.cot": "戦略分析",
@@ -323,6 +332,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "contentType.personal_branding": "パーソナルブランディング",
     "contentType.recruitment": "採用 / 求人",
     "contentType.seasonal": "季節・イベント",
+    "contentType.event_recap": "イベント参加レポート",
     "contentType.custom": "カスタム（自由入力）",
 
     // Theme / i18n
@@ -471,6 +481,10 @@ const translations: Record<Locale, Record<string, string>> = {
     // 이중 언어
     "settings.bilingual": "이중 언어 (EN + JA)",
     "settings.bilingual.description": "각 플랫폼의 콘텐츠를 영어와 일본어 모두로 생성",
+    "settings.bilingual.parallel": "병렬",
+    "settings.bilingual.parallel.description": "언어별로 별도 게시물 생성",
+    "settings.bilingual.combined": "병기",
+    "settings.bilingual.combined.description": "하나의 게시물에 EN+JA 병기",
 
     // 단계 스텝퍼
     "phase.cot": "전략 분석",
@@ -487,6 +501,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "contentType.personal_branding": "퍼스널 브랜딩",
     "contentType.recruitment": "채용 / 구인",
     "contentType.seasonal": "시즌 / 이벤트",
+    "contentType.event_recap": "이벤트 후기",
     "contentType.custom": "커스텀 (자유 입력)",
 
     // Theme / i18n
@@ -635,6 +650,10 @@ const translations: Record<Locale, Record<string, string>> = {
     // 双语
     "settings.bilingual": "双语 (EN + JA)",
     "settings.bilingual.description": "为每个平台同时生成英文和日文内容",
+    "settings.bilingual.parallel": "并行",
+    "settings.bilingual.parallel.description": "每种语言单独发布",
+    "settings.bilingual.combined": "合并",
+    "settings.bilingual.combined.description": "一个帖子中包含EN+JA",
 
     // 阶段步进器
     "phase.cot": "战略分析",
@@ -651,6 +670,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "contentType.personal_branding": "个人品牌",
     "contentType.recruitment": "招聘",
     "contentType.seasonal": "季节 / 节日",
+    "contentType.event_recap": "活动回顾",
     "contentType.custom": "自定义（自由输入）",
 
     // Theme / i18n
@@ -799,6 +819,10 @@ const translations: Record<Locale, Record<string, string>> = {
     // Bilingüe
     "settings.bilingual": "Bilingüe (EN + JA)",
     "settings.bilingual.description": "Generar contenido en inglés y japonés para cada plataforma",
+    "settings.bilingual.parallel": "Paralelo",
+    "settings.bilingual.parallel.description": "Publicaciones separadas por idioma",
+    "settings.bilingual.combined": "Combinado",
+    "settings.bilingual.combined.description": "EN + JA en una sola publicación",
 
     // Pasos de fase
     "phase.cot": "Análisis Estratégico",
@@ -815,6 +839,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "contentType.personal_branding": "Marca Personal",
     "contentType.recruitment": "Reclutamiento",
     "contentType.seasonal": "Estacional / Festividad",
+    "contentType.event_recap": "Resumen del Evento",
     "contentType.custom": "Personalizado (texto libre)",
 
     // Theme / i18n

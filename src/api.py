@@ -26,22 +26,13 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse, StreamingResponse  # noqa: E402
 
 from src import __version__
-from src.agent import (
-    IMAGE_DATA_END,
-    IMAGE_DATA_START,  # noqa: E402
-    REASONING_END,
-    REASONING_START,
-    run_agent_stream,
-)
+from src.agent import IMAGE_DATA_START  # noqa: E402
+from src.agent import IMAGE_DATA_END, REASONING_END, REASONING_START, run_agent_stream
 from src.config import DEBUG  # noqa: E402
 from src.content_safety import analyze_safety, check_prompt_shield, format_safety_summary
 from src.content_safety import is_configured as safety_configured  # noqa: E402
-from src.database import (
-    delete_conversation,
-    get_conversation,  # noqa: E402
-    list_conversations,
-    save_conversation,
-)
+from src.database import get_conversation  # noqa: E402
+from src.database import delete_conversation, list_conversations, save_conversation
 from src.models import ChatRequest
 from src.tools import generate_image, pop_pending_images
 
@@ -257,6 +248,7 @@ async def chat(request: Request) -> StreamingResponse:
                 reasoning_summary=chat_req.reasoning_summary,
                 ab_mode=chat_req.ab_mode,
                 bilingual=chat_req.bilingual,
+                bilingual_style=chat_req.bilingual_style,
             ):
                 if not chunk:
                     continue
