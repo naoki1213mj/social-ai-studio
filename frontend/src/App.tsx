@@ -38,7 +38,7 @@ export default function App() {
       setElapsedMs(0);
       timerRef.current = setInterval(() => {
         setElapsedMs(Date.now() - startTimeRef.current);
-      }, 100);
+      }, 500);
     } else {
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -99,6 +99,58 @@ export default function App() {
       setImageMap({});
 
       try {
+        let bufferedText = "";
+        let bufferedToolEvents: ToolEvent[] = [];
+        let bufferedImages: Record<string, string> = {};
+        let pendingReasoning: string | null = null;
+        let pendingThreadId: string | null = null;
+        let pendingError: string | null = null;
+        let pendingSafety: SafetyResult | null = null;
+        let lastFlushAt = Date.now();
+
+        const flushBufferedUpdates = () => {
+          if (pendingReasoning !== null) {
+            setReasoning(pendingReasoning);
+            pendingReasoning = null;
+          }
+
+          if (bufferedToolEvents.length > 0) {
+            const next = bufferedToolEvents;
+            bufferedToolEvents = [];
+            setToolEvents((prev) => [...prev, ...next]);
+          }
+
+          if (bufferedText) {
+            const delta = bufferedText;
+            bufferedText = "";
+            setContent((prev) => prev + delta);
+          }
+
+          if (pendingThreadId) {
+            setThreadId(pendingThreadId);
+            pendingThreadId = null;
+          }
+
+          if (pendingError) {
+            setError(pendingError);
+            pendingError = null;
+          }
+
+          if (pendingSafety) {
+            setSafetyResult(pendingSafety);
+            pendingSafety = null;
+          }
+
+          if (Object.keys(bufferedImages).length > 0) {
+            const imageDelta = bufferedImages;
+            bufferedImages = {};
+            setImageMap((prev) => ({
+              ...prev,
+              ...imageDelta,
+            }));
+          }
+        };
+
         for await (const chunk of streamChat(
           {
             message: data.message,
@@ -116,42 +168,45 @@ export default function App() {
         )) {
           // Reasoning — REPLACE mode (backend sends cumulative)
           if (chunk.reasoning !== null) {
-            setReasoning(chunk.reasoning);
+            pendingReasoning = chunk.reasoning;
           }
 
           // Tool events — append
           if (chunk.toolEvents.length > 0) {
-            setToolEvents((prev) => [...prev, ...chunk.toolEvents]);
+            bufferedToolEvents.push(...chunk.toolEvents);
           }
 
-          // Text content — replace (backend sends cumulative content)
+          // Text content — append delta chunks
           if (chunk.text) {
-            setContent(chunk.text);
+            bufferedText += chunk.text;
           }
 
           // Thread ID
           if (chunk.threadId) {
-            setThreadId(chunk.threadId);
+            pendingThreadId = chunk.threadId;
           }
 
           // Error
           if (chunk.error) {
-            setError(chunk.error);
+            pendingError = chunk.error;
           }
 
           // Safety result from Content Safety analysis
           if (chunk.safety) {
-            setSafetyResult(chunk.safety);
+            pendingSafety = chunk.safety;
           }
 
           // Image data — collect per-platform images
           if (chunk.imageData) {
             const imageData = chunk.imageData;
             const key = imageData.platform.toLowerCase();
-            setImageMap((prev) => ({
-              ...prev,
-              [key]: imageData.image_base64,
-            }));
+            bufferedImages[key] = imageData.image_base64;
+          }
+
+          const now = Date.now();
+          if (now - lastFlushAt >= 120 || chunk.done || chunk.error) {
+            flushBufferedUpdates();
+            lastFlushAt = now;
           }
 
           // Done
@@ -159,6 +214,8 @@ export default function App() {
             break;
           }
         }
+
+        flushBufferedUpdates();
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           setError(t("error.generic"));

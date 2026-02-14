@@ -7,12 +7,14 @@ Includes a monkey-patch to add ``type: "message"`` to Responses API
 input items, which the current agent-framework-core SDK omits.
 """
 
+# pylint: disable=no-name-in-module
+
 import logging
 from functools import lru_cache
 from typing import Any
 
 from agent_framework import Message
-from agent_framework.azure import AzureOpenAIResponsesClient
+from agent_framework.azure import AzureOpenAIResponsesClient  # type: ignore[attr-defined]
 from agent_framework.openai._responses_client import RawOpenAIResponsesClient
 from azure.identity import DefaultAzureCredential
 
@@ -29,7 +31,7 @@ _credential = DefaultAzureCredential()
 # an explicit "type" field (e.g., "message"), but the current
 # agent-framework-core SDK does not include it.
 # ---------------------------------------------------------------------------
-_original_prepare_message = RawOpenAIResponsesClient._prepare_message_for_openai
+_original_prepare_message = getattr(RawOpenAIResponsesClient, "_prepare_message_for_openai")
 
 
 def _patched_prepare_message(
@@ -45,7 +47,7 @@ def _patched_prepare_message(
     return items
 
 
-RawOpenAIResponsesClient._prepare_message_for_openai = _patched_prepare_message  # type: ignore[assignment]
+setattr(RawOpenAIResponsesClient, "_prepare_message_for_openai", _patched_prepare_message)
 
 
 async def _get_token() -> str:
@@ -69,7 +71,9 @@ def get_client() -> AzureOpenAIResponsesClient:
         raise ValueError("PROJECT_ENDPOINT is not configured. Set it in .env or environment variables.")
 
     logger.info(
-        f"Creating AzureOpenAIResponsesClient: base_url={RESPONSES_API_BASE_URL}, deployment={MODEL_DEPLOYMENT_NAME}"
+        "Creating AzureOpenAIResponsesClient: base_url=%s, deployment=%s",
+        RESPONSES_API_BASE_URL,
+        MODEL_DEPLOYMENT_NAME,
     )
 
     return AzureOpenAIResponsesClient(

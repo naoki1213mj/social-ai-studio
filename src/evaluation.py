@@ -10,20 +10,16 @@ Usage:
 """
 
 import logging
-import os
+from importlib.util import find_spec
+
+from src.config import EVAL_API_VERSION, EVAL_AZURE_ENDPOINT, EVAL_MODEL_DEPLOYMENT, EVAL_TOKEN_SCOPE
 
 logger = logging.getLogger(__name__)
 
 
 def is_configured() -> bool:
     """Check if evaluation SDK prerequisites are available."""
-    try:
-        import azure.ai.evaluation  # noqa: F401
-
-        # Need a model endpoint for AI-assisted metrics
-        return bool(os.getenv("PROJECT_ENDPOINT"))
-    except ImportError:
-        return False
+    return find_spec("azure.ai.evaluation") is not None and bool(EVAL_AZURE_ENDPOINT)
 
 
 async def evaluate_content(
@@ -48,22 +44,14 @@ async def evaluate_content(
 
     try:
         from azure.ai.evaluation import CoherenceEvaluator, FluencyEvaluator, RelevanceEvaluator
+        from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
+        from azure.identity import CredentialUnavailableError
 
         # Model config for AI-assisted evaluators
-        # IMPORTANT: The evaluation SDK uses AzureOpenAI's chat completions API,
-        # which requires the *resource-level* endpoint (no /api/projects/... path)
-        # and a stable API version (2024-10-21). The project-level endpoint returns 404.
-        project_endpoint = os.getenv("PROJECT_ENDPOINT", "")
-        # Extract resource-level base: https://<host>.services.ai.azure.com
-        from urllib.parse import urlparse
-
-        parsed = urlparse(project_endpoint)
-        eval_endpoint = f"{parsed.scheme}://{parsed.netloc}" if parsed.netloc else project_endpoint
-
         model_config = {
-            "azure_endpoint": eval_endpoint,
-            "azure_deployment": os.getenv("EVAL_MODEL_DEPLOYMENT", "gpt-4o-mini"),
-            "api_version": "2024-10-21",
+            "azure_endpoint": EVAL_AZURE_ENDPOINT,
+            "azure_deployment": EVAL_MODEL_DEPLOYMENT,
+            "api_version": EVAL_API_VERSION,
         }
 
         # Authenticate with DefaultAzureCredential via api_key (AAD token).
@@ -72,9 +60,9 @@ async def evaluate_content(
             from azure.identity import DefaultAzureCredential
 
             credential = DefaultAzureCredential()
-            token = credential.get_token("https://cognitiveservices.azure.com/.default")
+            token = credential.get_token(EVAL_TOKEN_SCOPE)
             model_config["api_key"] = token.token
-        except Exception as e:
+        except (ClientAuthenticationError, CredentialUnavailableError, ValueError, RuntimeError) as e:
             logger.warning("Failed to get credential for evaluation: %s", e)
             return {"error": f"Authentication failed: {e}"}
 
@@ -96,7 +84,7 @@ async def evaluate_content(
                     results[name] = float(score)
                 if reason:
                     results[f"{name}_reason"] = reason
-            except Exception as e:
+            except (HttpResponseError, ValueError, RuntimeError, TypeError) as e:
                 logger.warning("Evaluator '%s' failed: %s", name, e, exc_info=True)
                 results[name] = -1
                 eval_errors.append(f"{name}: {e}")
@@ -121,13 +109,13 @@ async def evaluate_content(
                     results["groundedness"] = float(score)
                 if reason:
                     results["groundedness_reason"] = reason
-            except Exception as e:
+            except (HttpResponseError, ValueError, RuntimeError, TypeError) as e:
                 logger.warning("Groundedness evaluator failed: %s", e)
 
     except ImportError:
         logger.warning("azure-ai-evaluation not installed — run: uv add azure-ai-evaluation")
         results["error"] = "azure-ai-evaluation not installed"
-    except Exception as e:
+    except (ValueError, RuntimeError, TypeError) as e:
         logger.error("Evaluation failed: %s", e, exc_info=True)
         results["error"] = str(e)
 

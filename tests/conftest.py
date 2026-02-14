@@ -8,24 +8,13 @@ def _reset_database_state():
     """Reset in-memory database state between tests."""
     import src.database as db
 
-    original_store = db._memory_store.copy()
-    original_init = db._initialized
-    original_container = db._container
-    original_client = db._cosmos_client
-
-    # Force in-memory mode
-    db._initialized = True
-    db._container = None
-    db._cosmos_client = None
-    db._memory_store = {}
+    snapshot = db.snapshot_database_state_for_tests()
+    db.force_in_memory_mode_for_tests()
 
     yield
 
     # Restore original state
-    db._memory_store = original_store
-    db._initialized = original_init
-    db._container = original_container
-    db._cosmos_client = original_client
+    db.restore_database_state_for_tests(snapshot)
 
 
 @pytest.fixture

@@ -67,7 +67,7 @@ export default function InputForm({
   const [contentType, setContentType] = useState("product_launch");
   const [customContentType, setCustomContentType] = useState("");
   const [language, setLanguage] = useState("en");
-  const [reasoningEffort, setReasoningEffort] = useState("medium");
+  const [reasoningEffort, setReasoningEffort] = useState("high");
   const [reasoningSummary, setReasoningSummary] = useState("auto");
   const [abMode, setAbMode] = useState(false);
   const [bilingual, setBilingual] = useState(false);
@@ -80,36 +80,30 @@ export default function InputForm({
     ? customContentType.trim()
     : contentType;
 
-  // Keyboard shortcuts: Ctrl/Cmd+Enter to submit, Escape to stop
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Escape to stop generation
-      if (e.key === "Escape" && loading) {
-        e.preventDefault();
-        onStop?.();
-        return;
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Escape" && loading) {
+      e.preventDefault();
+      onStop?.();
+      return;
+    }
+
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      if (!loading && message.trim() && platforms.length > 0) {
+        onSubmit({
+          message,
+          platforms,
+          contentType: effectiveContentType,
+          language,
+          reasoningEffort,
+          reasoningSummary,
+          abMode,
+          bilingual,
+          bilingualStyle,
+        });
       }
-      // Ctrl/Cmd + Enter to submit
-      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        if (!loading && message.trim() && platforms.length > 0) {
-          onSubmit({
-            message,
-            platforms,
-            contentType: effectiveContentType,
-            language,
-            reasoningEffort,
-            reasoningSummary,
-            abMode,
-            bilingual,
-            bilingualStyle,
-          });
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [loading, message, platforms, contentType, customContentType, language, reasoningEffort, reasoningSummary, abMode, bilingual, bilingualStyle, onSubmit, onStop]);
+    }
+  };
 
   // Handle external topic injection
   useEffect(() => {
@@ -154,6 +148,7 @@ export default function InputForm({
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={handleTextareaKeyDown}
           ref={textareaRef}
           placeholder={t("input.topic.placeholder")}
           rows={3}

@@ -4,6 +4,8 @@ Creates a single agent with multiple tools and provides streaming execution.
 Uses AzureOpenAIResponsesClient from agent-framework-core.
 """
 
+# pylint: disable=no-name-in-module
+
 import asyncio
 import json
 import logging
@@ -13,7 +15,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from agent_framework import AgentResponseUpdate
-from agent_framework.azure import AzureOpenAIResponsesClient
+from agent_framework.azure import AzureOpenAIResponsesClient  # type: ignore[attr-defined]
 from opentelemetry import trace
 
 from src import config
@@ -340,6 +342,9 @@ async def run_agent_stream(
                     continue
                 raise  # Non-retryable or exhausted retries
 
+        if stream is None:
+            raise RuntimeError("Failed to initialize agent stream")
+
         # Accumulate extracted image data for post-stream injection
         stream_result = StreamResult()
 
@@ -579,9 +584,10 @@ async def run_agent_stream(
         # If a hosted tool was configured but no events were detected during
         # streaming, inspect the final response for evidence of usage and emit
         # synthetic events so the frontend always shows what tools ran.
-        if hasattr(stream, "response"):
+        stream_response = getattr(stream, "response", None)
+        if stream_response is not None:
             try:
-                response = stream.response
+                response = stream_response
                 for output_item in getattr(response, "output", []):
                     item_type = getattr(output_item, "type", "")
                     for pattern, tool_name in _HOSTED_PATTERNS.items():
@@ -594,7 +600,7 @@ async def run_agent_stream(
                             if ev:
                                 yield ev
                             break
-            except Exception:
+            except (AttributeError, TypeError):
                 pass  # best-effort
 
         # Send final accumulated reasoning

@@ -5,6 +5,7 @@ Loads environment variables from .env and exposes them as module-level constants
 
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
@@ -51,6 +52,15 @@ OTEL_SERVICE_NAME: str = os.getenv("OTEL_SERVICE_NAME", "social-ai-studio")
 
 # Evaluation
 EVAL_MODEL_DEPLOYMENT: str = os.getenv("EVAL_MODEL_DEPLOYMENT", "gpt-4o-mini")
+_parsed_project_endpoint = urlparse(PROJECT_ENDPOINT) if PROJECT_ENDPOINT else None
+_derived_eval_endpoint = (
+    f"{_parsed_project_endpoint.scheme}://{_parsed_project_endpoint.netloc}"
+    if _parsed_project_endpoint and _parsed_project_endpoint.netloc
+    else ""
+)
+EVAL_AZURE_ENDPOINT: str = os.getenv("EVAL_AZURE_ENDPOINT", _derived_eval_endpoint)
+EVAL_API_VERSION: str = os.getenv("EVAL_API_VERSION", "2024-10-21")
+EVAL_TOKEN_SCOPE: str = os.getenv("EVAL_TOKEN_SCOPE", "https://cognitiveservices.azure.com/.default")
 
 # Content Safety
 CONTENT_SAFETY_ENDPOINT: str = os.getenv("CONTENT_SAFETY_ENDPOINT", "")

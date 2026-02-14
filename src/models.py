@@ -19,11 +19,11 @@ class ChatRequest(BaseModel):
     )
     content_type: str = Field(
         default="product_launch",
-        description="Content type: product_launch, blog_summary, event, hiring, trend, thought_leadership",
+        description="Content type identifier (e.g. product_launch, thought_leadership, event_promotion, custom)",
     )
-    language: str = Field(default="en", description="Output language: en or ja")
+    language: str = Field(default="en", description="Output language: en, ja, ko, zh, or es")
     reasoning_effort: str = Field(
-        default="medium",
+        default="high",
         description="GPT-5 reasoning depth: low, medium, high",
     )
     reasoning_summary: str = Field(

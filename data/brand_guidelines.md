@@ -8,6 +8,9 @@
 
 **[Your Company Name]** — Describe your company's mission, products, and target market here.
 
+> If this placeholder is not replaced, the assistant should treat brand context as unknown
+> and avoid using any guessed company name.
+
 **Mission**: Your company's mission statement.
 
 **Vision**: Your company's long-term vision.

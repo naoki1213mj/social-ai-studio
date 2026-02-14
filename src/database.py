@@ -13,19 +13,19 @@ from src.config import COSMOS_CONTAINER, COSMOS_DATABASE, COSMOS_ENDPOINT
 logger = logging.getLogger(__name__)
 
 # Lazy-init Cosmos client
-_cosmos_client = None
-_container = None
-_initialized = False
+_STATE: dict[str, Any] = {
+    "cosmos_client": None,
+    "container": None,
+    "initialized": False,
+}
 
 
 def _get_container():
     """Get or create Cosmos DB container client (lazy init)."""
-    global _cosmos_client, _container, _initialized
+    if _STATE["initialized"]:
+        return _STATE["container"]
 
-    if _initialized:
-        return _container
-
-    _initialized = True
+    _STATE["initialized"] = True
 
     if not COSMOS_ENDPOINT:
         logger.info("COSMOS_ENDPOINT not set — using in-memory history")
@@ -36,14 +36,14 @@ def _get_container():
         from azure.identity import DefaultAzureCredential
 
         credential = DefaultAzureCredential()
-        _cosmos_client = CosmosClient(COSMOS_ENDPOINT, credential=credential)
+        _STATE["cosmos_client"] = CosmosClient(COSMOS_ENDPOINT, credential=credential)
 
         # Use existing database and container (provisioned via IaC / Azure CLI).
         # get_*_client() creates a local reference without a network call,
         # so it works with the Data Contributor data-plane role — unlike
         # create_*_if_not_exists() which requires control-plane write perms.
-        database = _cosmos_client.get_database_client(COSMOS_DATABASE)
-        _container = database.get_container_client(COSMOS_CONTAINER)
+        database = _STATE["cosmos_client"].get_database_client(COSMOS_DATABASE)
+        _STATE["container"] = database.get_container_client(COSMOS_CONTAINER)
 
         logger.info(
             "Cosmos DB connected: %s, db=%s, container=%s",
@@ -51,15 +51,45 @@ def _get_container():
             COSMOS_DATABASE,
             COSMOS_CONTAINER,
         )
-        return _container
+        return _STATE["container"]
 
-    except Exception as e:
+    except ImportError as e:
+        logger.warning("Cosmos SDK not available, falling back to in-memory: %s", e)
+        return None
+    except (ValueError, RuntimeError, OSError) as e:
         logger.warning("Cosmos DB init failed, falling back to in-memory: %s", e)
         return None
 
 
 # In-memory fallback
 _memory_store: dict[str, dict[str, Any]] = {}
+
+
+def snapshot_database_state_for_tests() -> dict[str, Any]:
+    """Return a snapshot of module state for tests."""
+    return {
+        "memory_store": _memory_store.copy(),
+        "initialized": _STATE["initialized"],
+        "container": _STATE["container"],
+        "cosmos_client": _STATE["cosmos_client"],
+    }
+
+
+def force_in_memory_mode_for_tests() -> None:
+    """Force in-memory mode for deterministic unit tests."""
+    _STATE["initialized"] = True
+    _STATE["container"] = None
+    _STATE["cosmos_client"] = None
+    _memory_store.clear()
+
+
+def restore_database_state_for_tests(snapshot: dict[str, Any]) -> None:
+    """Restore module state from a snapshot created by tests."""
+    _memory_store.clear()
+    _memory_store.update(snapshot.get("memory_store", {}))
+    _STATE["initialized"] = snapshot.get("initialized", False)
+    _STATE["container"] = snapshot.get("container")
+    _STATE["cosmos_client"] = snapshot.get("cosmos_client")
 
 
 def save_conversation(
@@ -83,16 +113,18 @@ def save_conversation(
 
     if container is not None:
         try:
+            from azure.cosmos.exceptions import CosmosHttpResponseError, CosmosResourceNotFoundError
+
             # Try to preserve existing createdAt
             try:
                 existing = container.read_item(item=conversation_id, partition_key=user_id)
                 doc["createdAt"] = existing.get("createdAt", now)
-            except Exception:
+            except CosmosResourceNotFoundError:
                 pass  # New document — use current time
 
             container.upsert_item(doc)
             logger.debug("Saved conversation %s to Cosmos DB", conversation_id)
-        except Exception as e:
+        except CosmosHttpResponseError as e:
             logger.error("Failed to save to Cosmos DB: %s", e)
             # Fallback to memory
             _memory_store[conversation_id] = doc
@@ -110,6 +142,8 @@ def list_conversations(user_id: str = "anonymous") -> list[dict]:
 
     if container is not None:
         try:
+            from azure.cosmos.exceptions import CosmosHttpResponseError
+
             query = (
                 "SELECT c.id, c.title, c.createdAt, c.updatedAt "
                 "FROM c WHERE c.userId = @userId "
@@ -123,7 +157,7 @@ def list_conversations(user_id: str = "anonymous") -> list[dict]:
                 )
             )
             return items
-        except Exception as e:
+        except CosmosHttpResponseError as e:
             logger.error("Failed to list conversations from Cosmos DB: %s", e)
             return []
     else:
@@ -148,9 +182,11 @@ def get_conversation(conversation_id: str, user_id: str = "anonymous") -> dict |
 
     if container is not None:
         try:
+            from azure.cosmos.exceptions import CosmosResourceNotFoundError
+
             item = container.read_item(item=conversation_id, partition_key=user_id)
             return item
-        except Exception:
+        except CosmosResourceNotFoundError:
             return None
     else:
         return _memory_store.get(conversation_id)
@@ -162,9 +198,11 @@ def delete_conversation(conversation_id: str, user_id: str = "anonymous") -> boo
 
     if container is not None:
         try:
+            from azure.cosmos.exceptions import CosmosHttpResponseError
+
             container.delete_item(item=conversation_id, partition_key=user_id)
             return True
-        except Exception as e:
+        except CosmosHttpResponseError as e:
             logger.error("Failed to delete conversation: %s", e)
             return False
     else:

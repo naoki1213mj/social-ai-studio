@@ -9,8 +9,8 @@ from fastapi.testclient import TestClient
 from src.api import REASONING_PATTERN, TOOL_EVENT_PATTERN, _extract_image_prompts, app
 
 
-@pytest.fixture
-def client():
+@pytest.fixture(name="api_client")
+def _api_client_fixture():
     """Create a FastAPI test client (no lifespan to avoid Azure calls)."""
     with TestClient(app, raise_server_exceptions=False) as c:
         yield c
@@ -19,12 +19,12 @@ def client():
 class TestHealthEndpoint:
     """Test GET /api/health."""
 
-    def test_health_returns_200(self, client):
-        response = client.get("/api/health")
+    def test_health_returns_200(self, api_client):
+        response = api_client.get("/api/health")
         assert response.status_code == 200
 
-    def test_health_response_body(self, client):
-        data = client.get("/api/health").json()
+    def test_health_response_body(self, api_client):
+        data = api_client.get("/api/health").json()
         assert data["status"] == "ok"
         assert data["service"] == "social-ai-studio"
         assert "version" in data
@@ -33,86 +33,86 @@ class TestHealthEndpoint:
 class TestConversationEndpoints:
     """Test conversation CRUD endpoints."""
 
-    def test_list_empty(self, client):
-        response = client.get("/api/conversations")
+    def test_list_empty(self, api_client):
+        response = api_client.get("/api/conversations")
         assert response.status_code == 200
         assert response.json() == []
 
-    def test_create_and_list(self, client):
+    def test_create_and_list(self, api_client):
         # Save via internal function (API doesn't have a create endpoint directly)
         from src.database import save_conversation
 
         save_conversation("c1", "Test Chat", [{"role": "user", "content": "hi"}])
 
-        response = client.get("/api/conversations")
+        response = api_client.get("/api/conversations")
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
         assert data[0]["id"] == "c1"
 
-    def test_get_conversation(self, client):
+    def test_get_conversation(self, api_client):
         from src.database import save_conversation
 
         save_conversation("c1", "Test", [{"role": "user", "content": "hello"}])
-        response = client.get("/api/conversations/c1")
+        response = api_client.get("/api/conversations/c1")
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == "c1"
         assert len(data["messages"]) == 1
 
-    def test_get_nonexistent(self, client):
-        response = client.get("/api/conversations/does-not-exist")
+    def test_get_nonexistent(self, api_client):
+        response = api_client.get("/api/conversations/does-not-exist")
         assert response.status_code == 404
 
-    def test_delete_conversation(self, client):
+    def test_delete_conversation(self, api_client):
         from src.database import save_conversation
 
         save_conversation("c1", "To Delete", [])
-        response = client.delete("/api/conversations/c1")
+        response = api_client.delete("/api/conversations/c1")
         assert response.status_code == 200
         assert response.json()["status"] == "deleted"
 
         # Confirm deleted
-        response = client.get("/api/conversations/c1")
+        response = api_client.get("/api/conversations/c1")
         assert response.status_code == 404
 
-    def test_delete_nonexistent(self, client):
-        response = client.delete("/api/conversations/nope")
+    def test_delete_nonexistent(self, api_client):
+        response = api_client.delete("/api/conversations/nope")
         assert response.status_code == 404
 
 
 class TestChatEndpoint:
     """Test POST /api/chat."""
 
-    def test_invalid_body_returns_400(self, client):
-        response = client.post(
+    def test_invalid_body_returns_400(self, api_client):
+        response = api_client.post(
             "/api/chat",
             content=b"not json",
             headers={"Content-Type": "application/json"},
         )
         assert response.status_code == 400
 
-    def test_missing_message_returns_400(self, client):
-        response = client.post("/api/chat", json={"platforms": ["x"]})
+    def test_missing_message_returns_400(self, api_client):
+        response = api_client.post("/api/chat", json={"platforms": ["x"]})
         assert response.status_code == 400
 
     @patch("src.api.run_agent_stream")
-    def test_chat_returns_sse(self, mock_stream, client, sample_chat_body):
-        async def fake_stream(*args, **kwargs):
+    def test_chat_returns_sse(self, mock_stream, api_client, sample_chat_body):
+        async def fake_stream(*_args, **_kwargs):
             yield "Hello from agent"
 
         mock_stream.return_value = fake_stream()
-        response = client.post("/api/chat", json=sample_chat_body)
+        response = api_client.post("/api/chat", json=sample_chat_body)
         assert response.status_code == 200
         assert response.headers["content-type"].startswith("text/event-stream")
 
     @patch("src.api.run_agent_stream")
-    def test_chat_done_signal(self, mock_stream, client, sample_chat_body):
-        async def fake_stream(*args, **kwargs):
+    def test_chat_done_signal(self, mock_stream, api_client, sample_chat_body):
+        async def fake_stream(*_args, **_kwargs):
             yield "content text"
 
         mock_stream.return_value = fake_stream()
-        response = client.post("/api/chat", json=sample_chat_body)
+        response = api_client.post("/api/chat", json=sample_chat_body)
         body = response.text
 
         # Should contain a done event
@@ -186,8 +186,10 @@ class TestImageFallback:
     @patch("src.api.pop_pending_images")
     @patch("src.api.generate_image")
     @patch("src.api.run_agent_stream")
-    def test_chat_emits_fallback_image_event(self, mock_stream, mock_generate_image, mock_pop_pending_images, client):
-        async def fake_stream(*args, **kwargs):
+    def test_chat_emits_fallback_image_event(
+        self, mock_stream, mock_generate_image, mock_pop_pending_images, api_client
+    ):
+        async def fake_stream(*_args, **_kwargs):
             yield """```json
 {
     \"contents\": [
@@ -216,7 +218,7 @@ class TestImageFallback:
 }
 ```"""
 
-        async def fake_generate_image(*args, **kwargs):
+        async def fake_generate_image(*_args, **_kwargs):
             return '{"status":"generated"}'
 
         mock_stream.return_value = fake_stream()
@@ -232,7 +234,7 @@ class TestImageFallback:
             "reasoning_summary": "auto",
             "ab_mode": False,
         }
-        response = client.post("/api/chat", json=body)
+        response = api_client.post("/api/chat", json=body)
         assert response.status_code == 200
         assert '"type": "image"' in response.text or '"type":"image"' in response.text
         assert '"platform": "linkedin"' in response.text or '"platform":"linkedin"' in response.text

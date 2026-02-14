@@ -15,36 +15,41 @@ interface HistorySidebarProps {
   language: "en" | "ja" | "ko" | "zh" | "es";
 }
 
-const labels: Record<string, { history: string; newChat: string; noHistory: string; deleteConfirm: string }> = {
+const labels: Record<string, { history: string; newChat: string; noHistory: string; deleteConfirm: string; deleteLabel: string }> = {
   en: {
     history: "History",
     newChat: "New Chat",
     noHistory: "No conversations yet",
     deleteConfirm: "Delete this conversation?",
+    deleteLabel: "Delete",
   },
   ja: {
     history: "履歴",
     newChat: "新規チャット",
     noHistory: "会話履歴がありません",
     deleteConfirm: "この会話を削除しますか？",
+    deleteLabel: "削除",
   },
   ko: {
     history: "기록",
     newChat: "새 채팅",
     noHistory: "대화 기록이 없습니다",
     deleteConfirm: "이 대화를 삭제하시겠습니까?",
+    deleteLabel: "삭제",
   },
   zh: {
     history: "历史记录",
     newChat: "新建对话",
     noHistory: "暂无对话记录",
     deleteConfirm: "确定删除此对话？",
+    deleteLabel: "删除",
   },
   es: {
     history: "Historial",
     newChat: "Nuevo Chat",
     noHistory: "Sin conversaciones aún",
     deleteConfirm: "¿Eliminar esta conversación?",
+    deleteLabel: "Eliminar",
   },
 };
 
@@ -72,9 +77,6 @@ export default function HistorySidebar({
 
   useEffect(() => {
     fetchConversations();
-    // Poll every 30s
-    const interval = setInterval(fetchConversations, 30000);
-    return () => clearInterval(interval);
   }, [fetchConversations]);
 
   // Refresh after a new message
@@ -178,30 +180,37 @@ export default function HistorySidebar({
           <ul className="space-y-1">
             {conversations.map((convo) => (
               <li key={convo.id}>
-                <button
-                  onClick={() => onSelectConversation(convo.id)}
-                  className={`w-full text-left group flex items-start gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                <div
+                  className={`w-full group flex items-center gap-1 px-1 py-1 rounded-lg text-sm transition-colors ${
                     convo.id === currentThreadId
-                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
-                      : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                      ? "bg-blue-50 dark:bg-blue-900/30"
+                      : "hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
                 >
-                  <div className="flex-1 min-w-0">
+                  <button
+                    onClick={() => onSelectConversation(convo.id)}
+                    className={`flex-1 min-w-0 text-left px-2 py-1.5 rounded-md ${
+                      convo.id === currentThreadId
+                        ? "text-blue-700 dark:text-blue-300"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`}
+                  >
                     <p className="truncate font-medium text-xs">
                       {convo.title || "Untitled"}
                     </p>
                     <p className="text-[10px] text-gray-400 mt-0.5">
                       {formatTime(convo.updatedAt)}
                     </p>
-                  </div>
+                  </button>
                   <button
                     onClick={(e) => handleDelete(e, convo.id)}
                     className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-400 transition-opacity"
-                    title="Delete"
+                    title={t.deleteLabel}
+                    aria-label={t.deleteLabel}
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>
-                </button>
+                </div>
               </li>
             ))}
           </ul>

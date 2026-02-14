@@ -26,7 +26,7 @@ class TestChatRequest:
         assert req.platforms == ["linkedin", "x", "instagram"]
         assert req.content_type == "product_launch"
         assert req.language == "en"
-        assert req.reasoning_effort == "medium"
+        assert req.reasoning_effort == "high"
         assert req.reasoning_summary == "auto"
 
     def test_custom_values(self):
