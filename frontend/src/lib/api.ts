@@ -178,25 +178,86 @@ export async function* streamChat(
   const decoder = new TextDecoder("utf-8");
 
   let buffer = "";
+  let eventLines: string[] = [];
+
+  const findNextLineBreak = (text: string): number => {
+    const lfIndex = text.indexOf("\n");
+    const crIndex = text.indexOf("\r");
+    if (lfIndex === -1) return crIndex;
+    if (crIndex === -1) return lfIndex;
+    return Math.min(lfIndex, crIndex);
+  };
+
+  const consumeLine = (): string | null => {
+    const breakIndex = findNextLineBreak(buffer);
+    if (breakIndex === -1) return null;
+
+    const line = buffer.slice(0, breakIndex);
+    if (buffer[breakIndex] === "\r" && buffer[breakIndex + 1] === "\n") {
+      buffer = buffer.slice(breakIndex + 2);
+    } else {
+      buffer = buffer.slice(breakIndex + 1);
+    }
+    return line;
+  };
+
+  const buildEventPayload = (lines: string[]): string => {
+    if (lines.length === 0) return "";
+
+    const hasSSEFields = lines.some((line) => /^[a-zA-Z]+:/.test(line) || line.startsWith(":"));
+    if (!hasSSEFields) {
+      return lines.join("\n").trim();
+    }
+
+    const dataLines: string[] = [];
+    for (const line of lines) {
+      if (line.startsWith("data:")) {
+        dataLines.push(line.slice(5).replace(/^\s/, ""));
+      }
+    }
+
+    return dataLines.join("\n").trim();
+  };
+
+  const flushEvent = function* (): Generator<ParsedChunk> {
+    const payload = buildEventPayload(eventLines);
+    eventLines = [];
+    if (payload) {
+      yield parseChunk(payload);
+    }
+  };
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
 
     buffer += decoder.decode(value, { stream: true });
 
-    // SSE chunks are separated by double newlines
-    const parts = buffer.split("\n\n");
-    buffer = parts.pop() ?? "";
+    while (true) {
+      const line = consumeLine();
+      if (line === null) break;
 
-    for (const part of parts) {
-      const trimmed = part.trim();
-      if (!trimmed) continue;
-      yield parseChunk(trimmed);
+      if (line === "") {
+        for (const parsed of flushEvent()) {
+          yield parsed;
+        }
+        continue;
+      }
+
+      eventLines.push(line);
     }
   }
 
-  // Process remaining buffer
-  if (buffer.trim()) {
-    yield parseChunk(buffer.trim());
+  // Flush decoder tail + remaining data
+  buffer += decoder.decode();
+
+  // If stream ends without final newline, treat remaining buffer as last line
+  if (buffer.length > 0) {
+    eventLines.push(buffer);
+    buffer = "";
+  }
+
+  for (const parsed of flushEvent()) {
+    yield parsed;
   }
 }
