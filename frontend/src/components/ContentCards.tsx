@@ -591,10 +591,12 @@ export default function ContentCards({ data, t, onRefine, safetyResult, query }:
               { key: "fluency", label: t("eval.fluency"), score: evalResult.fluency, reason: evalResult.fluency_reason },
               ...(evalResult.groundedness != null ? [{ key: "groundedness", label: t("eval.groundedness"), score: evalResult.groundedness, reason: evalResult.groundedness_reason }] : []),
             ] as const).map((item) => {
-              const score = Number(item.score) || 0;
+              const rawScore = Number(item.score) || 0;
+              const score = Math.max(0, Math.min(5, rawScore));
               const pct = (score / 5) * 100;
               const color = score >= 4 ? "bg-green-500" : score >= 3 ? "bg-yellow-500" : "bg-red-500";
-              const stars = "★".repeat(Math.round(score)) + "☆".repeat(5 - Math.round(score));
+              const filled = Math.max(0, Math.min(5, Math.round(score)));
+              const stars = "★".repeat(filled) + "☆".repeat(5 - filled);
               return (
                 <div key={item.key} className="group">
                   <div className="flex items-center gap-2 text-xs">
