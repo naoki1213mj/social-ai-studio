@@ -108,7 +108,7 @@ export default function ContentDisplay({
   if (parsed && !isGenerating) {
     if (parsed.type === "ab") {
       const merged = mergeImages(parsed.data, imageMap);
-      return <ABCompareCards data={merged} t={t} onRefine={onRefine} />;
+      return <ABCompareCards data={merged} t={t} onRefine={onRefine} query={query} />;
     }
     const merged = mergeImages(parsed.data, imageMap);
     return <ContentCards data={merged} t={t} onRefine={onRefine} safetyResult={safetyResult} query={query} />;

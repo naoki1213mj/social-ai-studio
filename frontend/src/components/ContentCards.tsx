@@ -652,9 +652,10 @@ interface ABCompareCardsProps {
   data: ABStructuredOutput;
   t: (key: string) => string;
   onRefine?: (platform: string, feedback: string) => void;
+  query?: string;
 }
 
-export function ABCompareCards({ data, t, onRefine }: ABCompareCardsProps) {
+export function ABCompareCards({ data, t, onRefine, query }: ABCompareCardsProps) {
   const [selected, setSelected] = useState<"a" | "b" | null>(null);
 
   const variants = [
@@ -796,6 +797,7 @@ export function ABCompareCards({ data, t, onRefine }: ABCompareCardsProps) {
             }}
             t={t}
             onRefine={onRefine}
+            query={query}
           />
         </div>
       )}
