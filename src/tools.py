@@ -216,7 +216,6 @@ def _get_image_client() -> OpenAI:
     Uses the Responses API base URL with:
     - Bearer token auth via get_bearer_token_provider
     - x-ms-oai-image-generation-deployment header for model routing
-    - api-version query parameter required by Foundry endpoint
     """
     global _image_client
 
@@ -229,7 +228,6 @@ def _get_image_client() -> OpenAI:
         default_headers={
             "x-ms-oai-image-generation-deployment": IMAGE_DEPLOYMENT_NAME,
         },
-        default_query={"api-version": "2025-05-15-preview"},
     )
     logger.info(
         "Image client created (Responses API): base_url=%s, deployment=%s",
