@@ -56,7 +56,7 @@ def _get_container():
     except ImportError as e:
         logger.warning("Cosmos SDK not available, falling back to in-memory: %s", e)
         return None
-    except (ValueError, RuntimeError, OSError) as e:
+    except Exception as e:
         logger.warning("Cosmos DB init failed, falling back to in-memory: %s", e)
         return None
 
@@ -182,12 +182,15 @@ def get_conversation(conversation_id: str, user_id: str = "anonymous") -> dict |
 
     if container is not None:
         try:
-            from azure.cosmos.exceptions import CosmosResourceNotFoundError
+            from azure.cosmos.exceptions import CosmosHttpResponseError, CosmosResourceNotFoundError
 
             item = container.read_item(item=conversation_id, partition_key=user_id)
             return item
         except CosmosResourceNotFoundError:
             return None
+        except CosmosHttpResponseError as e:
+            logger.error("Failed to get conversation from Cosmos DB: %s", e)
+            return _memory_store.get(conversation_id)
     else:
         return _memory_store.get(conversation_id)
 
