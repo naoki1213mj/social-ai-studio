@@ -61,6 +61,7 @@ def _get(env_name: str, default: str = "") -> str:
     """Get config value: Key Vault secret > env var > default."""
     return _kv_secrets.get(env_name, os.getenv(env_name, default))
 
+
 # Microsoft Foundry
 PROJECT_ENDPOINT: str = _get("PROJECT_ENDPOINT")
 MODEL_DEPLOYMENT_NAME: str = _get("MODEL_DEPLOYMENT_NAME", "gpt-5.2")
