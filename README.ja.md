@@ -139,7 +139,7 @@ graph LR
     Actions -->|az acr build| ACR
     Actions -->|az containerapp update| CA
     ACR -->|pull| CA
-    CA -->"マネージド ID"| KV
+    CA -->|Managed Identity| KV
     CA -->|Private Endpoint| PECosmos
     PECosmos --> Cosmos
     CA -->|Private Endpoint| PEKV
