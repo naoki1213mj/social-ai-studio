@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 env:
-  ACR_NAME: crtpgbdttjke5x
+  ACR_NAME: crtechpulseprod
   IMAGE_NAME: social-ai-studio
   RESOURCE_GROUP: rg-hackfest-techconnect2026
   CONTAINER_APP_NAME: ca-tpgbdttjke5x
