@@ -12,6 +12,9 @@ export interface ChatRequest {
   ab_mode?: boolean;
   bilingual?: boolean;
   bilingual_style?: string;
+  persona?: string;
+  series_mode?: boolean;
+  series_count?: number;
 }
 
 /** Foundry Evaluation result (4-axis, 1-5 scale) */

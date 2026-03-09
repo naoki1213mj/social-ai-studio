@@ -283,18 +283,87 @@ IMPORTANT for Bilingual Combined mode:
 """.strip()
 
 
-def get_system_prompt(*, ab_mode: bool = False, bilingual: bool = False, bilingual_style: str = "parallel") -> str:
-    """Build the system prompt, optionally with A/B comparison or bilingual instructions.
+_PERSONA_PRESETS: dict[str, str] = {
+    "professional": "Write in a polished, business-appropriate tone. Use industry terminology precisely. Focus on ROI, strategic value, and credibility. Avoid slang or overly casual language.",
+    "casual": "Write in a friendly, conversational tone. Use everyday language, contractions, and relatable examples. Feel approachable and human — like a knowledgeable friend sharing insights.",
+    "technical": "Write for a technical audience (engineers, developers, architects). Include specific technologies, metrics, and implementation details. Use precise terminology; avoid marketing fluff.",
+    "executive": "Write for C-suite and senior leadership. Be concise, strategic, and impact-focused. Lead with business outcomes and market implications. Use authoritative but accessible language.",
+    "creative": "Write with flair and originality. Use vivid metaphors, storytelling techniques, and unexpected angles. Break conventional formats when it serves engagement. Be bold and memorable.",
+}
+
+_SERIES_ADDENDUM = """
+# Content Series Mode
+You are generating a **content series** — a sequence of {series_count} related posts that tell a cohesive story over time.
+
+## Series Structure Requirements
+- Generate EXACTLY {series_count} post sets (each set contains one post per requested platform)
+- Each post in the series should build on the previous one — create a clear narrative arc
+- Number each post set: "Post 1/{series_count}", "Post 2/{series_count}", etc.
+
+## Series Narrative Arc
+1. **Hook** (Post 1): Introduce the topic with a compelling question or surprising insight
+2. **Deep Dive** (Posts 2 to N-1): Explore different facets, data points, or case studies
+3. **Conclusion** (Final post): Synthesize key takeaways + strong CTA
+
+## Output Format for Series
+Return JSON with a `series` array instead of `contents`:
+```json
+{{
+  "mode": "series",
+  "series_count": {series_count},
+  "series": [
+    {{
+      "post_number": 1,
+      "theme": "Hook — introduce the challenge",
+      "contents": [
+        {{ "platform": "linkedin", "body": "...", "hashtags": [...], ... }},
+        ...
+      ]
+    }},
+    ...
+  ],
+  "review": {{ ... }},
+  "sources_used": [...]
+}}
+```
+
+## Rules
+- Each post must stand alone (readable without context) but also form a coherent series
+- Maintain consistent hashtag strategy across the series (1-2 recurring series tags)
+- Vary formats across posts: question → data → story → list → CTA
+- Each post should have its own image_prompt tailored to that post's theme
+""".strip()
+
+
+def get_system_prompt(
+    *,
+    ab_mode: bool = False,
+    bilingual: bool = False,
+    bilingual_style: str = "parallel",
+    persona: str = "",
+    series_mode: bool = False,
+    series_count: int = 3,
+) -> str:
+    """Build the system prompt with optional addendums.
 
     Args:
         ab_mode: If True, append A/B comparison mode instructions.
         bilingual: If True, append bilingual mode instructions.
         bilingual_style: "parallel" (separate posts) or "combined" (EN+JA in one post).
+        persona: Persona preset name or custom text.
+        series_mode: If True, append content series instructions.
+        series_count: Number of posts in the series (2-7).
 
     Returns:
         The complete system prompt string.
     """
     prompt = _BASE_PROMPT
+
+    # Persona injection
+    if persona:
+        persona_text = _PERSONA_PRESETS.get(persona, persona)
+        prompt += f"\n\n# Persona & Tone\n{persona_text}"
+
     if ab_mode:
         prompt += "\n\n" + _AB_MODE_ADDENDUM
     if bilingual:
@@ -302,6 +371,8 @@ def get_system_prompt(*, ab_mode: bool = False, bilingual: bool = False, bilingu
             prompt += "\n\n" + _BILINGUAL_COMBINED_ADDENDUM
         else:
             prompt += "\n\n" + _BILINGUAL_ADDENDUM
+    if series_mode:
+        prompt += "\n\n" + _SERIES_ADDENDUM.format(series_count=series_count)
     return prompt
 
 

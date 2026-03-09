@@ -46,6 +46,20 @@ class ChatRequest(BaseModel):
         default="parallel",
         description="Bilingual style: parallel (separate posts per language) or combined (EN+JA in one post)",
     )
+    persona: str = Field(
+        default="",
+        description="Persona preset (professional, casual, technical, executive, creative) or custom text",
+    )
+    series_mode: bool = Field(
+        default=False,
+        description="Content series mode: generate a multi-post series instead of a single post",
+    )
+    series_count: int = Field(
+        default=3,
+        ge=2,
+        le=7,
+        description="Number of posts in the series (2-7)",
+    )
 
 
 class ToolEvent(BaseModel):

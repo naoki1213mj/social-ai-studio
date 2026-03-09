@@ -175,6 +175,46 @@ async def health_check() -> dict:
     }
 
 
+# ---------- Brand Guidelines Upload API ---------- #
+
+ALLOWED_EXTENSIONS = {".md", ".txt", ".pdf"}
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
+
+
+@app.post("/api/guidelines/upload")
+async def upload_guidelines(request: Request):
+    """Upload a brand guidelines file to the Vector Store.
+
+    Accepts multipart/form-data with a single file field.
+    Supported formats: .md, .txt, .pdf
+    """
+    from src.vector_store import upload_to_vector_store
+
+    form = await request.form()
+    file = form.get("file")
+    if not file:
+        return JSONResponse({"error": "No file provided"}, status_code=400)
+
+    filename = getattr(file, "filename", "uploaded.txt")
+    ext = "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in ALLOWED_EXTENSIONS:
+        return JSONResponse(
+            {"error": f"Unsupported format: {ext}. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}"},
+            status_code=400,
+        )
+
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        return JSONResponse({"error": "File too large (max 10 MB)"}, status_code=400)
+
+    try:
+        result = upload_to_vector_store(content, filename)
+        return result
+    except Exception as e:
+        logger.error("Guidelines upload failed: %s", e)
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 # ---------- Conversation History API ---------- #
 
 
@@ -263,6 +303,9 @@ async def chat(request: Request) -> StreamingResponse:
                 ab_mode=chat_req.ab_mode,
                 bilingual=chat_req.bilingual,
                 bilingual_style=chat_req.bilingual_style,
+                persona=chat_req.persona,
+                series_mode=chat_req.series_mode,
+                series_count=chat_req.series_count,
             ):
                 if not chunk:
                     continue

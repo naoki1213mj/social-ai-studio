@@ -1,5 +1,20 @@
-import { ChevronDown, ChevronUp, Send, Settings2, Square } from "lucide-react";
+import { BookTemplate, ChevronDown, ChevronUp, Save, Send, Settings2, Square, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+
+interface TemplatePreset {
+  name: string;
+  platforms: string[];
+  contentType: string;
+  language: string;
+  reasoningEffort: string;
+  persona: string;
+  abMode: boolean;
+  bilingual: boolean;
+  bilingualStyle: string;
+  seriesMode: boolean;
+  seriesCount: number;
+  defaultTopic: string;
+}
 
 interface InputFormProps {
   t: (key: string) => string;
@@ -14,9 +29,11 @@ interface InputFormProps {
     abMode: boolean;
     bilingual: boolean;
     bilingualStyle: string;
+    persona: string;
+    seriesMode: boolean;
+    seriesCount: number;
   }) => void;
   onStop?: () => void;
-  /** Allow external topic injection (from SuggestedQuestions) */
   externalTopic?: string;
   onExternalTopicConsumed?: () => void;
 }
@@ -54,6 +71,28 @@ const REASONING_SUMMARIES = [
   { value: "detailed", labelKey: "settings.reasoningSummary.detailed" },
 ] as const;
 
+const PERSONAS = [
+  { value: "", labelKey: "persona.none" },
+  { value: "professional", labelKey: "persona.professional" },
+  { value: "casual", labelKey: "persona.casual" },
+  { value: "technical", labelKey: "persona.technical" },
+  { value: "executive", labelKey: "persona.executive" },
+  { value: "creative", labelKey: "persona.creative" },
+] as const;
+
+const TEMPLATES_STORAGE_KEY = "social_ai_templates";
+
+function loadTemplates(): TemplatePreset[] {
+  try {
+    const raw = localStorage.getItem(TEMPLATES_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function saveTemplates(templates: TemplatePreset[]) {
+  localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templates));
+}
+
 export default function InputForm({
   t,
   loading,
@@ -72,8 +111,15 @@ export default function InputForm({
   const [abMode, setAbMode] = useState(false);
   const [bilingual, setBilingual] = useState(false);
   const [bilingualStyle, setBilingualStyle] = useState("parallel");
+  const [persona, setPersona] = useState("");
+  const [seriesMode, setSeriesMode] = useState(false);
+  const [seriesCount, setSeriesCount] = useState(3);
   const [showSettings, setShowSettings] = useState(false);
+  const [templates, setTemplates] = useState<TemplatePreset[]>(loadTemplates);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string>("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Effective content type — use custom text when "custom" is selected
   const effectiveContentType = contentType === "custom" && customContentType.trim()
@@ -100,6 +146,9 @@ export default function InputForm({
           abMode,
           bilingual,
           bilingualStyle,
+          persona,
+          seriesMode,
+          seriesCount,
         });
       }
     }
@@ -132,7 +181,66 @@ export default function InputForm({
       abMode,
       bilingual,
       bilingualStyle,
+      persona,
+      seriesMode,
+      seriesCount,
     });
+  };
+
+  const handleSaveTemplate = () => {
+    const name = prompt(t("template.savePrompt") || "Template name:");
+    if (!name) return;
+    const tpl: TemplatePreset = {
+      name, platforms, contentType, language, reasoningEffort, persona,
+      abMode, bilingual, bilingualStyle, seriesMode, seriesCount,
+      defaultTopic: message,
+    };
+    const updated = [...templates.filter(tp => tp.name !== name), tpl];
+    setTemplates(updated);
+    saveTemplates(updated);
+  };
+
+  const handleLoadTemplate = (tpl: TemplatePreset) => {
+    setPlatforms(tpl.platforms);
+    setContentType(tpl.contentType);
+    setLanguage(tpl.language);
+    setReasoningEffort(tpl.reasoningEffort);
+    setPersona(tpl.persona || "");
+    setAbMode(tpl.abMode);
+    setBilingual(tpl.bilingual);
+    setBilingualStyle(tpl.bilingualStyle);
+    setSeriesMode(tpl.seriesMode || false);
+    setSeriesCount(tpl.seriesCount || 3);
+    if (tpl.defaultTopic) setMessage(tpl.defaultTopic);
+    setShowTemplates(false);
+  };
+
+  const handleDeleteTemplate = (name: string) => {
+    const updated = templates.filter(tp => tp.name !== name);
+    setTemplates(updated);
+    saveTemplates(updated);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadStatus(t("upload.uploading") || "Uploading...");
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/guidelines/upload", { method: "POST", body: formData });
+      if (res.ok) {
+        setUploadStatus(t("upload.success") || `✅ ${file.name} uploaded`);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setUploadStatus(`❌ ${err.error || res.statusText}`);
+      }
+    } catch {
+      setUploadStatus(t("upload.error") || "❌ Upload failed");
+    }
+    // Clear input so same file can be re-uploaded
+    e.target.value = "";
+    setTimeout(() => setUploadStatus(""), 5000);
   };
 
   return (
@@ -140,6 +248,61 @@ export default function InputForm({
       onSubmit={handleSubmit}
       className="glass-card rounded-2xl p-5 space-y-4 shadow-sm hover:shadow-md transition-shadow"
     >
+      {/* Template & Guidelines bar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Template dropdown */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowTemplates(!showTemplates)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200/60 dark:border-gray-700/60 bg-white/50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <BookTemplate className="w-3.5 h-3.5" />
+            {t("template.label") || "Templates"}
+          </button>
+          {showTemplates && (
+            <div className="absolute z-20 top-full left-0 mt-1 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-1 max-h-48 overflow-y-auto">
+              {templates.length === 0 ? (
+                <p className="text-xs text-gray-400 p-2 text-center">{t("template.empty") || "No saved templates"}</p>
+              ) : (
+                templates.map((tpl) => (
+                  <div key={tpl.name} className="flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                    <button type="button" onClick={() => handleLoadTemplate(tpl)} className="flex-1 text-left text-xs text-gray-700 dark:text-gray-300 truncate">
+                      {tpl.name}
+                    </button>
+                    <button type="button" onClick={() => handleDeleteTemplate(tpl.name)} className="opacity-0 group-hover:opacity-100 text-red-400 text-xs px-1">✕</button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={handleSaveTemplate}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200/60 dark:border-gray-700/60 bg-white/50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        >
+          <Save className="w-3.5 h-3.5" />
+          {t("template.save") || "Save"}
+        </button>
+
+        <div className="w-px h-5 bg-gray-200 dark:bg-gray-700" />
+
+        {/* Brand Guidelines Upload */}
+        <input ref={fileInputRef} type="file" accept=".md,.txt,.pdf" onChange={handleFileUpload} className="hidden" />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200/60 dark:border-gray-700/60 bg-white/50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        >
+          <Upload className="w-3.5 h-3.5" />
+          {t("upload.guidelines") || "Upload Guidelines"}
+        </button>
+        {uploadStatus && (
+          <span className="text-xs text-gray-500 dark:text-gray-400">{uploadStatus}</span>
+        )}
+      </div>
+
       {/* Topic input */}
       <div>
         <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">
@@ -239,6 +402,8 @@ export default function InputForm({
               🧠 {reasoningEffort} · {reasoningSummary}
               {abMode && " · A/B"}
               {bilingual && ` · 🌐 ${bilingualStyle === "combined" ? "EN+JA併記" : "EN+JA"}`}
+              {persona && ` · 👤 ${persona}`}
+              {seriesMode && ` · 📚 ×${seriesCount}`}
             </span>
           </div>
           {showSettings ? (
@@ -380,6 +545,75 @@ export default function InputForm({
                     : (t("settings.bilingual.parallel.description") || "Separate posts for each language"))
                   : (t("settings.bilingual.description") || "Generate content in both English and Japanese for each platform")
                 }
+              </p>
+            </div>
+
+            {/* Persona Setting */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+                👤 {t("settings.persona") || "Persona / Tone"}
+              </label>
+              <div className="flex gap-1.5 flex-wrap">
+                {PERSONAS.map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => setPersona(p.value)}
+                    className={`px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      persona === p.value
+                        ? "bg-orange-600 text-white"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    {t(p.labelKey) || (p.value || "Default")}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                {t("settings.persona.description") || "Adjust the writing tone and style for your target audience"}
+              </p>
+            </div>
+
+            {/* Series Mode */}
+            <div>
+              <label className="flex items-center justify-between cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-500 to-orange-500 text-white">📚</span>
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                    {t("settings.seriesMode") || "Content Series"}
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={seriesMode}
+                    onChange={(e) => setSeriesMode(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-gray-200 dark:bg-gray-700 peer-focus:ring-2 peer-focus:ring-amber-500/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-amber-500 peer-checked:to-orange-500" />
+                </div>
+              </label>
+              {seriesMode && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{t("settings.seriesCount") || "Posts:"}</span>
+                  {[3, 5, 7].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setSeriesCount(n)}
+                      className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                        seriesCount === n
+                          ? "bg-amber-600 text-white"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                {t("settings.seriesMode.description") || "Generate a multi-post series with a narrative arc"}
               </p>
             </div>
           </div>

@@ -90,6 +90,9 @@ export default function App() {
       abMode: boolean;
       bilingual: boolean;
       bilingualStyle: string;
+      persona: string;
+      seriesMode: boolean;
+      seriesCount: number;
     }) => {
       // Save for retry
       setLastSubmitData(data);
@@ -174,6 +177,9 @@ export default function App() {
             ab_mode: data.abMode,
             bilingual: data.bilingual,
             bilingual_style: data.bilingualStyle,
+            persona: data.persona || undefined,
+            series_mode: data.seriesMode || undefined,
+            series_count: data.seriesMode ? data.seriesCount : undefined,
           },
           controller.signal,
         )) {

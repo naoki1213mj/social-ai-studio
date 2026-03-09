@@ -96,3 +96,38 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     result_id = ensure_vector_store()
     print(f"Vector Store ID: {result_id}")
+
+
+def upload_to_vector_store(file_content: bytes, filename: str) -> dict:
+    """Upload a file to the existing vector store.
+
+    Args:
+        file_content: Raw file bytes.
+        filename: Original filename for the upload.
+
+    Returns:
+        Dict with file_id and vector_store_id.
+    """
+    import src.config as cfg
+
+    vs_id = cfg.VECTOR_STORE_ID
+    if not vs_id:
+        raise ValueError("Vector Store not initialized — restart the application first")
+
+    client = _get_openai_client()
+
+    import io
+
+    uploaded_file = client.files.create(
+        file=(filename, io.BytesIO(file_content)),
+        purpose="assistants",
+    )
+    logger.info("Uploaded file: %s (%s)", uploaded_file.id, filename)
+
+    client.vector_stores.files.create(
+        vector_store_id=vs_id,
+        file_id=uploaded_file.id,
+    )
+    logger.info("Attached file %s to vector store %s", uploaded_file.id, vs_id)
+
+    return {"file_id": uploaded_file.id, "vector_store_id": vs_id, "filename": filename}

@@ -111,6 +111,31 @@ const translations: Record<Locale, Record<string, string>> = {
     "ab.winner": "Higher Score",
     "ab.fullView": "Full view",
 
+    // Persona
+    "settings.persona": "Persona / Tone",
+    "settings.persona.description": "Adjust the writing tone and style for your target audience",
+    "persona.none": "Default",
+    "persona.professional": "Professional",
+    "persona.casual": "Casual",
+    "persona.technical": "Technical",
+    "persona.executive": "Executive",
+    "persona.creative": "Creative",
+
+    // Series Mode
+    "settings.seriesMode": "Content Series",
+    "settings.seriesMode.description": "Generate a multi-post series with a narrative arc",
+    "settings.seriesCount": "Posts:",
+
+    // Templates & Upload
+    "template.label": "Templates",
+    "template.save": "Save",
+    "template.empty": "No saved templates",
+    "template.savePrompt": "Template name:",
+    "upload.guidelines": "Upload Guidelines",
+    "upload.uploading": "Uploading...",
+    "upload.success": "✅ Uploaded",
+    "upload.error": "❌ Upload failed",
+
     // Content
     "content.copy": "Copy",
     "content.copied": "Copied!",
@@ -279,6 +304,31 @@ const translations: Record<Locale, Record<string, string>> = {
     "ab.selected": "選択済み",
     "ab.winner": "高スコア",
     "ab.fullView": "詳細表示",
+
+    // Persona
+    "settings.persona": "ペルソナ / トーン",
+    "settings.persona.description": "ターゲット読者に合わせた文体・トーンを調整",
+    "persona.none": "デフォルト",
+    "persona.professional": "プロフェッショナル",
+    "persona.casual": "カジュアル",
+    "persona.technical": "テクニカル",
+    "persona.executive": "エグゼクティブ",
+    "persona.creative": "クリエイティブ",
+
+    // Series Mode
+    "settings.seriesMode": "コンテンツシリーズ",
+    "settings.seriesMode.description": "ストーリーアークのある連続投稿シリーズを生成",
+    "settings.seriesCount": "投稿数:",
+
+    // Templates & Upload
+    "template.label": "テンプレート",
+    "template.save": "保存",
+    "template.empty": "保存済みテンプレートなし",
+    "template.savePrompt": "テンプレート名:",
+    "upload.guidelines": "ガイドライン",
+    "upload.uploading": "アップロード中...",
+    "upload.success": "✅ アップロード完了",
+    "upload.error": "❌ アップロード失敗",
 
     // Content
     "content.copy": "コピー",

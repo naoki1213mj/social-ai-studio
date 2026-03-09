@@ -142,6 +142,9 @@ async def run_agent_stream(
     ab_mode: bool = False,
     bilingual: bool = False,
     bilingual_style: str = "parallel",
+    persona: str = "",
+    series_mode: bool = False,
+    series_count: int = 3,
 ) -> AsyncIterator[str]:
     """Execute the agent and yield SSE-formatted events.
 
@@ -229,7 +232,14 @@ async def run_agent_stream(
         default_options["reasoning"] = reasoning_opts
 
     # Create agent with all tools (hosted + custom @tool)
-    system_prompt = get_system_prompt(ab_mode=ab_mode, bilingual=bilingual, bilingual_style=bilingual_style)
+    system_prompt = get_system_prompt(
+        ab_mode=ab_mode,
+        bilingual=bilingual,
+        bilingual_style=bilingual_style,
+        persona=persona,
+        series_mode=series_mode,
+        series_count=series_count,
+    )
     agent = client.as_agent(
         name="social_ai_studio_agent",
         instructions=system_prompt,
