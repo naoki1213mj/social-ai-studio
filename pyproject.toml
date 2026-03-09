@@ -8,6 +8,7 @@ dependencies = [
     "agent-framework-core",
     "azure-identity",
     "azure-cosmos",
+    "azure-keyvault-secrets",
     "azure-monitor-opentelemetry",
     "azure-core-tracing-opentelemetry",
     "azure-ai-contentsafety",

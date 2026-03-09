@@ -2,5 +2,7 @@
   "containerRegistry": "cr",
   "logAnalytics": "log-",
   "containerAppsEnv": "cae-",
-  "containerApp": "ca-"
+  "containerApp": "ca-",
+  "virtualNetwork": "vnet-",
+  "keyVault": "kv-"
 }

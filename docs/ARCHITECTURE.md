@@ -1,10 +1,10 @@
 # Azure Architecture — Social AI Studio
 
-> **Last updated**: 2026-02-13 (verified against live Azure resources)
+> **Last updated**: 2026-03-09 (VNet + Key Vault + Private Endpoints)
 
 ## Overview
 
-Social AI Studio runs on **Azure Container Apps** as a single-container deployment (multi-stage Docker: React frontend + Python backend). The agent leverages Microsoft Foundry's Responses API for reasoning (gpt-5.2) and image generation (gpt-image-1.5).
+Social AI Studio runs on **Azure Container Apps** with **VNet integration** as a single-container deployment (multi-stage Docker: React frontend + Python backend). The agent leverages Microsoft Foundry's Responses API for reasoning (gpt-5.2) and image generation (gpt-image-1.5). All backend services (Cosmos DB, Key Vault) are accessed via **Private Endpoints** within the VNet. Secrets are managed centrally in **Azure Key Vault**.
 
 ## Architecture Diagram
 
@@ -22,9 +22,20 @@ graph TB
     subgraph Azure["Azure (East US 2)"]
         subgraph RG["Resource Group: rg-hackfest-techconnect2026"]
 
-            subgraph Compute["Compute"]
-                CAE["Container Apps Environment<br/>cae-techpulse-prod"]
-                CA["🐳 Container App<br/>ca-techpulse-prod<br/>FastAPI + React SPA"]
+            subgraph Network["Virtual Network (10.0.0.0/16)"]
+                subgraph CASubnet["snet-container-apps (10.0.0.0/23)"]
+                    CAE["Container Apps Environment<br/>cae-techpulse-prod<br/>(VNet-integrated)"]
+                    CA["🐳 Container App<br/>ca-techpulse-prod<br/>FastAPI + React SPA<br/>System Managed Identity"]
+                end
+
+                subgraph PESubnet["snet-private-endpoints (10.0.2.0/24)"]
+                    PECosmos["🔒 PE: Cosmos DB"]
+                    PEKV["🔒 PE: Key Vault"]
+                end
+            end
+
+            subgraph Security["Security & Secrets"]
+                KV["🔑 Key Vault<br/>kv-techpulse-prod<br/>RBAC + Private Endpoint"]
             end
 
             subgraph Registry["Container Registry"]
@@ -41,14 +52,19 @@ graph TB
             end
 
             subgraph Data["Data & Persistence"]
-                Cosmos["💾 Cosmos DB<br/>cosmos-social-ai-studio<br/>social-ai-studio / conversations"]
+                Cosmos["💾 Cosmos DB<br/>cosmos-social-ai-studio<br/>Private Endpoint only"]
                 VectorStore["📁 Vector Store<br/>(Foundry-managed)"]
-                AISearch["🔍 Azure AI Search<br/>search-social-ai-studio<br/>Agentic Retrieval (Foundry IQ)"]
+                AISearch["🔍 Azure AI Search<br/>search-social-ai-studio"]
             end
 
             subgraph Observability["Observability"]
                 AppInsights["📊 Application Insights<br/>appi-social-ai-studio"]
                 LogAnalytics["📋 Log Analytics<br/>log-techpulse-prod"]
+            end
+
+            subgraph DNS["Private DNS Zones"]
+                DNSCosmos["privatelink.documents.azure.com"]
+                DNSKV["privatelink.vaultcore.azure.net"]
             end
         end
     end
@@ -62,19 +78,25 @@ graph TB
     Actions -->|az acr build| ACR
     Actions -->|az containerapp update| CA
     ACR -->|pull image| CA
+    CA -->|Managed Identity| KV
+    KV -.->|secrets| CA
     CA -->|Responses API<br/>DefaultAzureCredential| Foundry
     Foundry --> Project
     Project --> GPT52
     Project --> GPTImg
     CA -->|Web Search tool| Bing
     CA -->|File Search tool| VectorStore
-    CA -->|Foundry IQ<br/>Agentic Retrieval| AISearch
+    CA -->|Agentic Retrieval| AISearch
     CA -->|MCP tool| MCP
-    CA -->|Text Analysis +<br/>Prompt Shield| ContentSafety
-    CA -->|CRUD| Cosmos
+    CA -->|Text Analysis| ContentSafety
+    CA -->|Private Endpoint| PECosmos
+    PECosmos -->|CRUD| Cosmos
+    CA -->|Private Endpoint| PEKV
+    PEKV --> KV
     CA -->|OTel traces| AppInsights
     AppInsights --> LogAnalytics
-    CAE -.->|manages| CA
+    DNSCosmos -.->|resolves| PECosmos
+    DNSKV -.->|resolves| PEKV
 ```
 
 ## Resource Inventory
@@ -85,13 +107,19 @@ graph TB
 | **AI Project** | `CognitiveServices/accounts/projects` | `proj-hackfest2026` | Foundry project (Responses API endpoint, agent tools) |
 | **Bing Grounding** | `Bing/accounts` | `bingsrch-hackefest-techconnect2026` | Web search tool for real-time trend research |
 | **Container Registry** | `ContainerRegistry/registries` | `crtechpulseprod` | Docker image registry (Basic SKU) |
-| **Container Apps Env** | `App/managedEnvironments` | `cae-techpulse-prod` | Managed environment for Container Apps |
-| **Container App** | `App/containerApps` | `ca-techpulse-prod` | Application host (single container: React + FastAPI) |
-| **Cosmos DB** | `DocumentDB/databaseAccounts` | `cosmos-social-ai-studio` | Conversation history persistence |
+| **Virtual Network** | `Network/virtualNetworks` | `vnet-techpulse-prod` | Network isolation (10.0.0.0/16) |
+| **Container Apps Env** | `App/managedEnvironments` | `cae-techpulse-prod` | Managed environment (VNet-integrated) |
+| **Container App** | `App/containerApps` | `ca-techpulse-prod` | Application host (System Managed Identity) |
+| **Key Vault** | `KeyVault/vaults` | `kv-techpulse-prod` | Secret management (RBAC, Private Endpoint) |
+| **Cosmos DB** | `DocumentDB/databaseAccounts` | `cosmos-social-ai-studio` | Conversation history (Private Endpoint) |
 | **Application Insights** | `Insights/components` | `appi-social-ai-studio` | Distributed tracing + metrics |
-| **Log Analytics** | `OperationalInsights/workspaces` | `log-techpulse-prod` | Log aggregation (backing store for App Insights) |
-| **Azure AI Search** | `Search/searchServices` | `search-social-ai-studio` | Foundry IQ Agentic Retrieval (Knowledge Base + semantic reranking) |
+| **Log Analytics** | `OperationalInsights/workspaces` | `log-techpulse-prod` | Log aggregation |
+| **Azure AI Search** | `Search/searchServices` | `search-social-ai-studio` | Agentic Retrieval (Foundry IQ) |
 | **Content Safety** | `CognitiveServices/accounts` | `cs-content-safety-prod` | Text moderation + prompt shield |
+| **Private Endpoint** | `Network/privateEndpoints` | `pe-cosmos-social-ai-studio` | Cosmos DB private access |
+| **Private Endpoint** | `Network/privateEndpoints` | `pe-kv-techpulse-prod` | Key Vault private access |
+| **Private DNS Zone** | `Network/privateDnsZones` | `privatelink.documents.azure.com` | Cosmos DB private DNS |
+| **Private DNS Zone** | `Network/privateDnsZones` | `privatelink.vaultcore.azure.net` | Key Vault private DNS |
 
 ## Model Deployments
 
@@ -104,9 +132,17 @@ graph TB
 
 | Aspect | Configuration |
 |--------|--------------|
-| **Ingress** | HTTPS (TLS auto-managed by Container Apps) |
-| **App URL** | `https://ca-techpulse-prod.mangorock-56f29ae1.eastus2.azurecontainerapps.io/` |
-| **Auth (app → AI)** | `DefaultAzureCredential` (Managed Identity in prod, Azure CLI locally) |
+| **VNet** | `vnet-techpulse-prod` (10.0.0.0/16) |
+| **Container Apps Subnet** | `snet-container-apps` (10.0.0.0/23, delegated) |
+| **Private Endpoints Subnet** | `snet-private-endpoints` (10.0.2.0/24) |
+| **Cosmos DB access** | Private Endpoint only (`publicNetworkAccess: Disabled`) |
+| **Key Vault access** | Private Endpoint only (`publicNetworkAccess: Disabled`) |
+| **Ingress** | HTTPS (TLS auto-managed by Container Apps, external) |
+| **App URL** | `https://ca-techpulse-prod.<env-suffix>.eastus2.azurecontainerapps.io/` |
+| **Auth (app → AI)** | `DefaultAzureCredential` (System Managed Identity) |
+| **Auth (app → Key Vault)** | RBAC: Key Vault Secrets User role |
+| **Auth (app → Cosmos DB)** | RBAC: Cosmos DB Built-in Data Contributor |
+| **Secret management** | Azure Key Vault (PROJECT_ENDPOINT, App Insights, Content Safety) |
 | **Token audience** | `https://ai.azure.com/.default` |
 | **Container pull** | ACR admin credentials (Container App ↔ ACR) |
 

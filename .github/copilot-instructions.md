@@ -36,7 +36,7 @@ Future roadmap includes multi-agent pipeline (Ideation → Creator → Reviewer)
 │   ├── instructions/     # Security & Python-Foundry rules
 │   └── workflows/        # GitHub Actions (ci.yml, deploy.yml, security.yml)
 ├── src/
-│   ├── config.py         # Configuration loader (env vars)
+│   ├── config.py         # Configuration loader (env vars + Key Vault secrets)
 │   ├── client.py         # AzureOpenAIResponsesClient singleton + monkey-patch
 │   ├── agent.py          # Agent creation, reasoning options, SSE streaming
 │   ├── tools.py          # Custom tools (generate_content, review_content, generate_image)
@@ -64,9 +64,11 @@ Future roadmap includes multi-agent pipeline (Ideation → Creator → Reviewer)
 │   ├── ARCHITECTURE.md   # Azure architecture (resources, Mermaid diagrams)
 │   ├── DESIGN.md         # Architecture design document
 │   └── SPEC.md           # Technical specification
-├── infra/                # Bicep IaC (ACR + Container Apps)
+├── infra/                # Bicep IaC (VNet + Key Vault + Private Endpoints + Container Apps)
 │   ├── main.bicep
-│   └── main.parameters.json
+│   ├── main.parameters.json
+│   ├── abbreviations.json
+│   └── provision.sh      # One-time infra provisioning script
 ├── .env                  # Environment variables (gitignored)
 ├── .env.example          # Example config with placeholders
 ├── pyproject.toml        # Python project config (uv)

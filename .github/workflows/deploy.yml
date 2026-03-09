@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/**'
       - 'frontend/**'
+      - 'infra/**'
       - 'Dockerfile'
       - 'pyproject.toml'
       - 'uv.lock'
