@@ -26,14 +26,26 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse, StreamingResponse  # noqa: E402
 
 from src import __version__  # noqa: E402
-from src.agent import IMAGE_DATA_START  # noqa: E402
-from src.agent import IMAGE_DATA_END, REASONING_END, REASONING_START, run_agent_stream
+from src.agent import (  # noqa: E402
+    IMAGE_DATA_END,
+    IMAGE_DATA_START,
+    REASONING_END,
+    REASONING_START,
+    run_agent_stream,
+)
 from src.config import DEBUG  # noqa: E402
-from src.content_safety import analyze_safety  # noqa: E402
-from src.content_safety import check_prompt_shield, format_safety_summary
+from src.content_safety import (  # noqa: E402
+    analyze_safety,
+    check_prompt_shield,
+    format_safety_summary,
+)
 from src.content_safety import is_configured as safety_configured  # noqa: E402
-from src.database import get_conversation  # noqa: E402
-from src.database import delete_conversation, list_conversations, save_conversation
+from src.database import (  # noqa: E402
+    delete_conversation,
+    get_conversation,
+    list_conversations,
+    save_conversation,
+)
 from src.models import ChatRequest  # noqa: E402
 from src.tools import generate_image, pop_pending_images  # noqa: E402
 
