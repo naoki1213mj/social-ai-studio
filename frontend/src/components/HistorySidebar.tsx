@@ -10,6 +10,7 @@ interface ConversationSummary {
 
 interface HistorySidebarProps {
   currentThreadId: string | null;
+  userId: string;
   onSelectConversation: (id: string) => void;
   onNewConversation: () => void;
   language: "en" | "ja" | "ko" | "zh" | "es";
@@ -55,6 +56,7 @@ const labels: Record<string, { history: string; newChat: string; noHistory: stri
 
 export default function HistorySidebar({
   currentThreadId,
+  userId,
   onSelectConversation,
   onNewConversation,
   language,
@@ -65,7 +67,7 @@ export default function HistorySidebar({
 
   const fetchConversations = useCallback(async () => {
     try {
-      const res = await fetch("/api/conversations");
+      const res = await fetch(`/api/conversations?user_id=${encodeURIComponent(userId)}`);
       if (res.ok) {
         const data = await res.json();
         setConversations(data);
@@ -73,7 +75,7 @@ export default function HistorySidebar({
     } catch {
       // Silently fail — history is optional
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     fetchConversations();
@@ -91,7 +93,7 @@ export default function HistorySidebar({
     e.stopPropagation();
     if (!confirm(t.deleteConfirm)) return;
     try {
-      await fetch(`/api/conversations/${id}`, { method: "DELETE" });
+      await fetch(`/api/conversations/${id}?user_id=${encodeURIComponent(userId)}`, { method: "DELETE" });
       setConversations((prev) => prev.filter((c) => c.id !== id));
     } catch {
       // Ignore

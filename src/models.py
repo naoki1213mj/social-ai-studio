@@ -9,6 +9,10 @@ class ChatRequest(BaseModel):
     """Incoming chat request from the frontend."""
 
     message: str = Field(..., description="User input text", min_length=1, max_length=10000)
+    user_id: str | None = Field(
+        None,
+        description="Anonymous user ID for history separation",
+    )
     thread_id: str | None = Field(
         None,
         description="Thread ID for multi-turn conversation (null for first message)",

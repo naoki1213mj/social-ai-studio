@@ -15,6 +15,15 @@ export default function App() {
   const { theme, toggleTheme } = useTheme();
   const { locale, setLocale, t, toggleLocale } = useI18n("ja");
 
+  const getOrCreateAnonUserId = () => {
+    const storageKey = "social_ai_anon_user_id";
+    const existing = localStorage.getItem(storageKey);
+    if (existing) return existing;
+    const newId = (globalThis.crypto?.randomUUID?.() ?? `anon-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+    localStorage.setItem(storageKey, newId);
+    return newId;
+  };
+
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState("");
   const [reasoning, setReasoning] = useState("");
@@ -22,6 +31,7 @@ export default function App() {
   const [safetyResult, setSafetyResult] = useState<SafetyResult | null>(null);
   const [imageMap, setImageMap] = useState<Record<string, string>>({});
   const [threadId, setThreadId] = useState<string | null>(null);
+  const [userId] = useState(() => getOrCreateAnonUserId());
   const [error, setError] = useState<string | null>(null);
   const [suggestedTopic, setSuggestedTopic] = useState<string>("");
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -154,6 +164,7 @@ export default function App() {
         for await (const chunk of streamChat(
           {
             message: data.message,
+            user_id: userId,
             thread_id: threadId ?? undefined,
             platforms: data.platforms,
             content_type: data.contentType,
@@ -250,7 +261,7 @@ export default function App() {
   /** Handle selecting a conversation from history */
   const handleSelectConversation = useCallback(async (conversationId: string) => {
     try {
-      const res = await fetch(`/api/conversations/${conversationId}`);
+      const res = await fetch(`/api/conversations/${conversationId}?user_id=${encodeURIComponent(userId)}`);
       if (!res.ok) return;
       const data = await res.json();
       setThreadId(conversationId);
@@ -268,7 +279,7 @@ export default function App() {
     } catch {
       // Ignore
     }
-  }, []);
+  }, [userId]);
 
   /** Format elapsed time as seconds */
   const elapsedText = loading || elapsedMs > 0
@@ -295,6 +306,7 @@ export default function App() {
         {/* History Sidebar */}
         <HistorySidebar
           currentThreadId={threadId}
+          userId={userId}
           onSelectConversation={handleSelectConversation}
           onNewConversation={handleNewConversation}
           language={locale}

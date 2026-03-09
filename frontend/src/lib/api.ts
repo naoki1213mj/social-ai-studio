@@ -2,6 +2,7 @@
 
 export interface ChatRequest {
   message: string;
+  user_id?: string;
   thread_id?: string;
   platforms: string[];
   content_type: string;

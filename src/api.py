@@ -26,26 +26,14 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse, StreamingResponse  # noqa: E402
 
 from src import __version__  # noqa: E402
-from src.agent import (
-    IMAGE_DATA_END,
-    IMAGE_DATA_START,  # noqa: E402
-    REASONING_END,
-    REASONING_START,
-    run_agent_stream,
-)
+from src.agent import IMAGE_DATA_START  # noqa: E402
+from src.agent import IMAGE_DATA_END, REASONING_END, REASONING_START, run_agent_stream
 from src.config import DEBUG  # noqa: E402
-from src.content_safety import (
-    analyze_safety,  # noqa: E402
-    check_prompt_shield,
-    format_safety_summary,
-)
+from src.content_safety import analyze_safety  # noqa: E402
+from src.content_safety import check_prompt_shield, format_safety_summary
 from src.content_safety import is_configured as safety_configured  # noqa: E402
-from src.database import (
-    delete_conversation,
-    get_conversation,  # noqa: E402
-    list_conversations,
-    save_conversation,
-)
+from src.database import get_conversation  # noqa: E402
+from src.database import delete_conversation, list_conversations, save_conversation
 from src.models import ChatRequest  # noqa: E402
 from src.tools import generate_image, pop_pending_images  # noqa: E402
 
@@ -179,24 +167,24 @@ async def health_check() -> dict:
 
 
 @app.get("/api/conversations")
-async def api_list_conversations() -> list[dict]:
+async def api_list_conversations(user_id: str = "anonymous") -> list[dict]:
     """List all conversations."""
-    return list_conversations()
+    return list_conversations(user_id=user_id)
 
 
 @app.get("/api/conversations/{conversation_id}")
-async def api_get_conversation(conversation_id: str):
+async def api_get_conversation(conversation_id: str, user_id: str = "anonymous"):
     """Get a single conversation with messages."""
-    convo = get_conversation(conversation_id)
+    convo = get_conversation(conversation_id, user_id=user_id)
     if convo is None:
         return JSONResponse(content={"error": "Not found"}, status_code=404)
     return convo
 
 
 @app.delete("/api/conversations/{conversation_id}")
-async def api_delete_conversation(conversation_id: str):
+async def api_delete_conversation(conversation_id: str, user_id: str = "anonymous"):
     """Delete a conversation."""
-    if delete_conversation(conversation_id):
+    if delete_conversation(conversation_id, user_id=user_id):
         return {"status": "deleted"}
     return JSONResponse(content={"error": "Not found"}, status_code=404)
 
@@ -238,7 +226,8 @@ async def chat(request: Request) -> StreamingResponse:
         )
 
     # Get conversation history from database (Cosmos or in-memory)
-    existing = get_conversation(thread_id)
+    user_id = chat_req.user_id or "anonymous"
+    existing = get_conversation(thread_id, user_id=user_id)
     history: list[dict] = existing.get("messages", []) if existing else []
 
     # Add user message to history
@@ -335,6 +324,7 @@ async def chat(request: Request) -> StreamingResponse:
                     conversation_id=thread_id,
                     title=title,
                     messages=history,
+                    user_id=user_id,
                 )
 
             # ---- Image fallback: generate missing visuals from image_prompt ----
