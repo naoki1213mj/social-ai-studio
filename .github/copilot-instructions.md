@@ -90,7 +90,7 @@ Future roadmap includes multi-agent pipeline (Ideation → Creator → Reviewer)
 - Define custom tools with `@tool(approval_mode="never_require")` + `Annotated` type hints
 - Handle `429 (Request Rate Too Large)` with retry-after logic
 - Use async APIs where available for better throughput
-- Load `PROJECT_ENDPOINT` and `MODEL_DEPLOYMENT_NAME` from environment variables via `python-dotenv`
+- Load config from environment variables via `python-dotenv`; in production, secrets (`PROJECT_ENDPOINT`, etc.) are auto-loaded from Azure Key Vault when `AZURE_KEY_VAULT_URL` is set
 
 ### Hosted Tools
 

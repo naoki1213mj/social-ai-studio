@@ -58,8 +58,7 @@ OpenTelemetry 分散トレーシング、Foundry Evaluation による品質メ�
 | `ab_mode` | ❌ | A/B 比較モード（デフォルト: false）|
 | `bilingual` | ❌ | バイリンガルモード（EN+JA同時生成、デフォルト: false）|
 | `bilingual_style` | ❌ | バイリンガルスタイル: parallel（個別投稿）/ combined（EN+JA併記）|
-| `thread_id` | ❌ | マルチターン用スレッド ID（初回は null）|
-| `conversation_id` | ❌ | Cosmos DB 会話 ID |
+| `thread_id` | ❌ | マルチターン用スレッド ID（初回は null）|| `user_id` | ❤ | 匿名ユーザー ID（履歴分離用、localStorage で自動発行）|| `conversation_id` | ❌ | Cosmos DB 会話 ID |
 
 ### 2.4 出力
 
@@ -101,11 +100,13 @@ OpenTelemetry 分散トレーシング、Foundry Evaluation による品質メ�
 |------|------|
 | **レスポンス時間** | 全プロセス完了まで 120秒以内目標（reasoning=high 時）|
 | **エラーハンドリング** | 429 レート制限時の retry-after 対応、SSE error イベント |
-| **セキュリティ** | 資格情報はすべて環境変数経由、DefaultAzureCredential |
+| **セキュリティ** | 資格情報はすべて環境変数経由または Key Vault、DefaultAzureCredential |
+| **シークレット管理** | Azure Key Vault (RBAC, Private Endpoint) で PROJECT_ENDPOINT 等を一元管理 |
+| **ネットワーク** | VNet 統合 Container Apps + Private Endpoints (Cosmos DB, Key Vault) |
 | **コンテンツ安全性** | Azure AI Content Safety（テキスト有害分析 + プロンプトシールド）|
 | **可観測性** | OpenTelemetry 分散トレーシング → Application Insights |
 | **品質評価** | Foundry Evaluation SDK (Relevance, Coherence, Fluency, Groundedness) |
-| **データ永続化** | Cosmos DB 会話履歴（InMemory フォールバック）|
+| **データ永続化** | Cosmos DB 会話履歴（Private Endpoint 経由、ユーザー分離、InMemory フォールバック） |
 | **マルチターン** | Thread ID + Conversation ID 保持でリファイン対話対応 |
 | **停止/リトライ** | Stop ボタンで SSE 中断、Retry ボタンで再生成 |
 | **テスト** | 123 ユニットテスト (pytest + pytest-asyncio) |

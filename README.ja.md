@@ -36,7 +36,8 @@
 | 🔍 **オブザーバビリティ** | OpenTelemetry → Azure Application Insights → Foundry Tracing |
 | 🛡️ **コンテンツ安全性** | Azure AI Content Safety（テキスト分析 + プロンプトシールド）リアルタイムバッジ |
 | 🖼️ **画像生成** | gpt-image-1.5 によるプラットフォーム最適化ビジュアル（LinkedIn 1.91:1, Instagram 1:1） |
-| 💾 **データ永続化** | Cosmos DB 会話履歴（インメモリフォールバック付き） |
+| 💾 **データ永続化** | Cosmos DB 会話履歴（Private Endpoint）ユーザー分離 + インメモリフォールバック付き |
+| 🔑 **シークレット管理** | Azure Key Vault（Private Endpoint + RBAC） |
 | 🌐 **5 言語 i18n** | EN / JA / KO / ZH / ES フラグセレクター |
 | 🌏 **バイリンガルモード** | EN + JA 同時生成 — 並列（個別投稿）/ 併記（EN+JAを1投稿に）切替対応 |
 | 📝 **16 コンテンツタイプ** | 製品ローンチ、ソートリーダーシップ、イベント参加レポート、ケーススタディ、チュートリアル、カスタム自由入力など |
@@ -100,10 +101,21 @@ graph LR
     end
 
     subgraph Azure["Azure — East US 2"]
-        subgraph Compute["コンピュート"]
-            CA["🐳 Container App<br/>ca-techpulse-prod<br/>FastAPI + React SPA"]
-            ACR["📦 ACR<br/>crtechpulseprod"]
+        subgraph Network["VNet (10.0.0.0/16)"]
+            subgraph Compute["コンピュート (snet-container-apps)"]
+                CA["🐳 Container App<br/>VNet 統合<br/>システムマネージド ID"]
+            end
+            subgraph PEs["snet-private-endpoints"]
+                PECosmos["🔒 PE: Cosmos DB"]
+                PEKV["🔒 PE: Key Vault"]
+            end
         end
+
+        subgraph Security["シークレット管理"]
+            KV["🔑 Key Vault<br/>RBAC + Private Endpoint"]
+        end
+
+        ACR["📦 ACR<br/>crtechpulseprod"]
 
         subgraph AI["AI サービス"]
             Foundry["🧠 AI Foundry<br/>+ Project"]
@@ -114,7 +126,7 @@ graph LR
         end
 
         subgraph Data["データ & 可観測性"]
-            Cosmos["💾 Cosmos DB"]
+            Cosmos["💾 Cosmos DB<br/>Private Endpoint のみ"]
             VS["📁 Vector Store"]
             AISearch["🔍 AI Search<br/>(Foundry IQ)"]
             AppInsights["📊 Application Insights"]
@@ -127,9 +139,14 @@ graph LR
     Actions -->|az acr build| ACR
     Actions -->|az containerapp update| CA
     ACR -->|pull| CA
+    CA -->"マネージド ID"| KV
+    CA -->|Private Endpoint| PECosmos
+    PECosmos --> Cosmos
+    CA -->|Private Endpoint| PEKV
+    PEKV --> KV
     CA -->|Responses API| Foundry
     Foundry --> GPT52 & GPTImg
-    CA --> Bing & VS & AISearch & Safety & Cosmos
+    CA --> Bing & VS & AISearch & Safety
     CA --> MCP
     CA -.->|OTel| AppInsights
 ```
@@ -252,8 +269,10 @@ AI 設定で A/B モードをオンにすると**異なる戦略の 2 つのコ�
 | **グラウンディング** | File Search（Vector Store）、Web Search（Bing）、MCP（Microsoft Learn）、Foundry IQ（Agentic Retrieval） |
 | **オブザーバビリティ** | OpenTelemetry → Azure Application Insights → Foundry Tracing |
 | **評価** | azure-ai-evaluation SDK（Relevance, Coherence, Fluency, Groundedness） |
-| **データベース** | Azure Cosmos DB（会話履歴、インメモリフォールバック） |
+| **データベース** | Azure Cosmos DB（会話履歴、Private Endpoint、インメモリフォールバック） |
+| **シークレット管理** | Azure Key Vault（RBAC、Private Endpoint） |
 | **認証** | DefaultAzureCredential（Azure CLI / マネージド ID） |
+| **ネットワーク** | VNet 統合 Container Apps + Private Endpoints（Cosmos DB、Key Vault） |
 | **バックエンド** | FastAPI + uvicorn（SSE ストリーミング） |
 | **フロントエンド** | React 19 + TypeScript 5 + Vite 7 + Tailwind CSS v3 |
 | **UI コンポーネント** | lucide-react アイコン、react-markdown、recharts（レーダーチャート） |
@@ -327,9 +346,10 @@ git push → Lint (Ruff) → Test (123 pytest) → Build (ACR) → Deploy (Conta
 
 | 変数名 | 説明 | 必須 |
 | ------ | ---- | ---- |
-| `PROJECT_ENDPOINT` | Microsoft Foundry プロジェクトエンドポイント | **はい** |
+| `PROJECT_ENDPOINT` | Microsoft Foundry プロジェクトエンドポイント（または Key Vault 経由） | **はい** |
 | `MODEL_DEPLOYMENT_NAME` | 推論モデルデプロイメント | **はい** |
 | `IMAGE_DEPLOYMENT_NAME` | 画像モデルデプロイメント | **はい** |
+| `AZURE_KEY_VAULT_URL` | Key Vault URL（本番環境でシークレット自動読み込み） | いいえ |
 | `VECTOR_STORE_ID` | 初回実行時に自動生成 | いいえ |
 | `COSMOS_ENDPOINT` | Cosmos DB エンドポイント | いいえ |
 | `COSMOS_DATABASE` | Cosmos DB データベース名 | いいえ |
@@ -339,7 +359,7 @@ git push → Lint (Ruff) → Test (123 pytest) → Build (ACR) → Deploy (Conta
 | `AI_SEARCH_API_KEY` | AI Search 管理キー（MI 使用時は不要） | いいえ |
 | `AI_SEARCH_REASONING_EFFORT` | 検索推論レベル（minimal/low/medium） | いいえ |
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | 分散トレーシング用 App Insights | いいえ |
-| `CONTENT_SAFETY_ENDPOINT` | Azure AI Content Safety エンドポイント | いいえ |
+| `CONTENT_SAFETY_ENDPOINT` | Azure AI Content Safety エンドポイント（または Key Vault 経由） | いいえ |
 | `OTEL_SERVICE_NAME` | OpenTelemetry サービス名 | いいえ |
 | `EVAL_MODEL_DEPLOYMENT` | Foundry Evaluation 用モデル | いいえ |
 | `DEBUG` | デバッグログ有効化 | いいえ |

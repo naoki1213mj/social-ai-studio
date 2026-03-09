@@ -38,7 +38,8 @@ Single reasoning agent (gpt-5.2) × 7 tools × 3-phase thinking pipeline × prod
 | 🔍 **Observability** | OpenTelemetry → Azure Application Insights → Foundry Tracing |
 | 🛡️ **Content Safety** | Azure AI Content Safety (text analysis + prompt shield) with real-time badge |
 | 🖼️ **Image Generation** | gpt-image-1.5 creates platform-optimized visuals (LinkedIn 1.91:1, Instagram 1:1) |
-| 💾 **Persistence** | Cosmos DB conversation history with in-memory fallback |
+| 💾 **Persistence** | Cosmos DB conversation history (Private Endpoint) with per-user separation and in-memory fallback |
+| 🔑 **Secret Management** | Azure Key Vault with Private Endpoint + RBAC |
 | 🌐 **5-Language i18n** | EN / JA / KO / ZH / ES with flag-based selector |
 | 🌏 **Bilingual Mode** | EN + JA simultaneous generation — Parallel (separate posts) or Combined (EN+JA in one post) |
 | 📝 **16 Content Types** | Product launch, thought leadership, event recap, case study, tutorial, custom freeform, and more |
@@ -102,10 +103,21 @@ graph LR
     end
 
     subgraph Azure["Azure — East US 2"]
-        subgraph Compute["Compute"]
-            CA["🐳 Container App<br/>ca-techpulse-prod<br/>FastAPI + React SPA"]
-            ACR["📦 ACR<br/>crtechpulseprod"]
+        subgraph Network["VNet (10.0.0.0/16)"]
+            subgraph Compute["snet-container-apps"]
+                CA["🐳 Container App<br/>VNet-integrated<br/>System Managed Identity"]
+            end
+            subgraph PEs["snet-private-endpoints"]
+                PECosmos["🔒 PE: Cosmos DB"]
+                PEKV["🔒 PE: Key Vault"]
+            end
         end
+
+        subgraph Security["Secrets"]
+            KV["🔑 Key Vault<br/>RBAC + Private Endpoint"]
+        end
+
+        ACR["📦 ACR<br/>crtechpulseprod"]
 
         subgraph AI["AI Services"]
             Foundry["🧠 AI Foundry<br/>+ Project"]
@@ -116,7 +128,7 @@ graph LR
         end
 
         subgraph Data["Data & Observability"]
-            Cosmos["💾 Cosmos DB"]
+            Cosmos["💾 Cosmos DB<br/>Private Endpoint only"]
             VS["📁 Vector Store"]
             AISearch["🔍 AI Search<br/>(Foundry IQ)"]
             AppInsights["📊 Application Insights"]
@@ -129,9 +141,14 @@ graph LR
     Actions -->|az acr build| ACR
     Actions -->|az containerapp update| CA
     ACR -->|pull| CA
+    CA -->|Managed Identity| KV
+    CA -->|Private Endpoint| PECosmos
+    PECosmos --> Cosmos
+    CA -->|Private Endpoint| PEKV
+    PEKV --> KV
     CA -->|Responses API| Foundry
     Foundry --> GPT52 & GPTImg
-    CA --> Bing & VS & AISearch & Safety & Cosmos
+    CA --> Bing & VS & AISearch & Safety
     CA --> MCP
     CA -.->|OTel| AppInsights
 ```
@@ -254,8 +271,10 @@ Toggle A/B mode in AI Settings to generate **two content variants with different
 | **Grounding** | File Search (Vector Store), Web Search (Bing), MCP (Microsoft Learn), Foundry IQ (Agentic Retrieval) |
 | **Observability** | OpenTelemetry → Azure Application Insights → Foundry Tracing |
 | **Evaluation** | azure-ai-evaluation SDK (Relevance, Coherence, Fluency, Groundedness) |
-| **Database** | Azure Cosmos DB (conversation history, in-memory fallback) |
+| **Database** | Azure Cosmos DB (conversation history, Private Endpoint, in-memory fallback) |
+| **Secret Management** | Azure Key Vault (RBAC, Private Endpoint) |
 | **Auth** | DefaultAzureCredential (Azure CLI / Managed Identity) |
+| **Networking** | VNet-integrated Container Apps + Private Endpoints (Cosmos DB, Key Vault) |
 | **Backend** | FastAPI + uvicorn (SSE streaming) |
 | **Frontend** | React 19 + TypeScript 5 + Vite 7 + Tailwind CSS v3 |
 | **UI Components** | lucide-react icons, react-markdown, recharts (radar charts) |
@@ -329,9 +348,10 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full Azure architecture
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `PROJECT_ENDPOINT` | Microsoft Foundry project endpoint | **Yes** |
+| `PROJECT_ENDPOINT` | Microsoft Foundry project endpoint (or via Key Vault) | **Yes** |
 | `MODEL_DEPLOYMENT_NAME` | Reasoning model deployment | **Yes** |
 | `IMAGE_DEPLOYMENT_NAME` | Image model deployment | **Yes** |
+| `AZURE_KEY_VAULT_URL` | Key Vault URL (secrets auto-loaded in production) | No |
 | `VECTOR_STORE_ID` | Auto-generated on first run | No |
 | `COSMOS_ENDPOINT` | Cosmos DB endpoint | No |
 | `COSMOS_DATABASE` | Cosmos DB database name | No |
@@ -340,7 +360,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full Azure architecture
 | `AI_SEARCH_KNOWLEDGE_BASE_NAME` | Knowledge Base name | No |
 | `AI_SEARCH_API_KEY` | AI Search admin key (optional if using MI) | No |
 | `AI_SEARCH_REASONING_EFFORT` | Retrieval reasoning effort (minimal/low/medium) | No |
-| `CONTENT_SAFETY_ENDPOINT` | Azure AI Content Safety endpoint | No |
+| `CONTENT_SAFETY_ENDPOINT` | Azure AI Content Safety endpoint (or via Key Vault) | No |
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | App Insights for distributed tracing | No |
 | `OTEL_SERVICE_NAME` | OpenTelemetry service name | No |
 | `EVAL_MODEL_DEPLOYMENT` | Model for Foundry Evaluation | No |

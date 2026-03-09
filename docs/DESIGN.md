@@ -49,9 +49,13 @@
 │  ┌─────────────────┐  ┌──────────────────┐  ┌──────────────┐   │
 │  │ OpenTelemetry    │  │ Cosmos DB        │  │ Foundry      │   │
 │  │ Distributed      │  │ 会話履歴         │  │ Evaluation   │   │
-│  │ Tracing          │  │ (InMemory FB)    │  │ (azure-ai-   │   │
-│  │ → App Insights   │  │                  │  │  evaluation) │   │
-│  └─────────────────┘  └──────────────────┘  └──────────────┘   │
+  │ Tracing          │  │ (Private EP)     │  │ (azure-ai-   │   │
+  │ → App Insights   │  │ (ユーザー分離)     │  │  evaluation) │   │
+  └─────────────────┘  └──────────────────┘  └──────────────┘   │
+  ┌─────────────────┐                                                  │
+  │ Key Vault        │  Secret management (RBAC + PE)               │
+  │ (Private EP)     │  PROJECT_ENDPOINT, App Insights, etc.        │
+  └─────────────────┘                                                  │
 └──────────────────────────────────────────────────────────────────┘
                │              │              │              │
        ┌───────┘     ┌────────┘     ┌────────┘     ┌────────┘
